@@ -103,10 +103,12 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminByUsername(username: string): Promise<Admin | undefined> {
     try {
+      console.log('Getting admin by username:', username);
       const [rows] = await pool.query(
         'SELECT * FROM admins WHERE username = ?',
         [username]
       );
+      console.log('Query result:', rows);
       return rows[0] as Admin | undefined;
     } catch (error) {
       console.error('Error fetching admin:', error);

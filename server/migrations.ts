@@ -1,4 +1,5 @@
 import { pool } from './db';
+import bcrypt from 'bcrypt';
 
 async function createTables() {
   try {
@@ -12,7 +13,18 @@ async function createTables() {
       )
     `);
 
-    // Site ayarları tablosu
+    // Varsayılan admin şifresini hash'le
+    const defaultPassword = 'admin123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    // Varsayılan admin kullanıcısı
+    await pool.query(`
+      INSERT INTO admins (username, password)
+      SELECT 'admin', ? 
+      WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'admin')
+    `, [hashedPassword]);
+
+    // Diğer tablolar aynı kalacak...
     await pool.query(`
       CREATE TABLE IF NOT EXISTS site_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,7 +33,6 @@ async function createTables() {
       )
     `);
 
-    // Footer ayarları tablosu
     await pool.query(`
       CREATE TABLE IF NOT EXISTS footer_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,13 +41,6 @@ async function createTables() {
         phone VARCHAR(20),
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `);
-
-    // Varsayılan admin kullanıcısı (admin:admin123)
-    await pool.query(`
-      INSERT INTO admins (username, password)
-      SELECT 'admin', '$2b$10$8KvT5KXpdLH6kFzVPOf/heYoKzx9wkZbE1eM9v6VBCfj7OqUYhZie'
-      WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'admin')
     `);
 
     // Varsayılan site ayarları

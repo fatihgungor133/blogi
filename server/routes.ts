@@ -83,15 +83,29 @@ export async function registerRoutes(app: Express) {
   app.post('/api/admin/login', async (req, res) => {
     try {
       const { username, password } = req.body;
-      const admin = await storage.getAdminByUsername(username);
+      console.log('Login attempt for username:', username);
 
-      if (!admin || !await bcrypt.compare(password, admin.password)) {
+      const admin = await storage.getAdminByUsername(username);
+      console.log('Found admin:', admin ? 'Yes' : 'No');
+
+      if (!admin) {
+        console.log('Admin not found');
+        return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, admin.password);
+      console.log('Password valid:', isPasswordValid);
+
+      if (!isPasswordValid) {
+        console.log('Invalid password');
         return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
       }
 
       req.session.adminId = admin.id;
+      console.log('Session set, adminId:', admin.id);
       res.json({ message: "Giriş başarılı" });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(500).json({ error: 'Giriş yapılırken hata oluştu' });
     }
   });
