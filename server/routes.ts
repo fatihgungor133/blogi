@@ -155,18 +155,25 @@ export async function registerRoutes(app: Express) {
 
   app.get('/api/admin/settings/footer', requireAuth, async (req, res) => {
     try {
+      console.log('Session in footer settings:', req.session);
       const settings = await storage.getFooterSettings();
+      console.log('Retrieved footer settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in /api/admin/settings/footer:', error);
       res.status(500).json({ error: 'Footer ayarları yüklenirken hata oluştu' });
     }
   });
 
   app.patch('/api/admin/settings/footer', requireAuth, async (req, res) => {
     try {
+      console.log('Session in update footer settings:', req.session);
+      console.log('Updating footer settings with:', req.body);
       const settings = await storage.updateFooterSettings(req.body);
+      console.log('Updated footer settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in PATCH /api/admin/settings/footer:', error);
       res.status(500).json({ error: 'Footer ayarları güncellenirken hata oluştu' });
     }
   });
@@ -186,8 +193,10 @@ export async function registerRoutes(app: Express) {
   app.get('/api/site/footer', async (req, res) => {
     try {
       const settings = await storage.getFooterSettings();
+      console.log('Public footer settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in /api/site/footer:', error);
       res.status(500).json({ error: 'Footer ayarları yüklenirken hata oluştu' });
     }
   });

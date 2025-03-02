@@ -209,8 +209,38 @@ export class DatabaseStorage implements IStorage {
 
   async getFooterSettings(): Promise<FooterSettings> {
     try {
+      console.log('Fetching footer settings');
       const [rows] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
-      return rows[0] as FooterSettings;
+      console.log('Raw footer settings from DB:', rows[0]);
+
+      if (!rows[0]) {
+        console.log('No footer settings found, creating default settings');
+        const [result] = await pool.query(
+          'INSERT INTO footer_settings (about_text, email, phone) VALUES (?, ?, ?)',
+          ['Modern ve SEO uyumlu blog platformu', 'info@example.com', '+90 212 123 45 67']
+        );
+        const [inserted] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [result.insertId]);
+        console.log('Created default footer settings:', inserted[0]);
+
+        return {
+          id: inserted[0].id,
+          aboutText: inserted[0].about_text,
+          email: inserted[0].email,
+          phone: inserted[0].phone,
+          updatedAt: inserted[0].updated_at
+        };
+      }
+
+      const settings = {
+        id: rows[0].id,
+        aboutText: rows[0].about_text,
+        email: rows[0].email,
+        phone: rows[0].phone,
+        updatedAt: rows[0].updated_at
+      };
+
+      console.log('Transformed footer settings:', settings);
+      return settings;
     } catch (error) {
       console.error('Error fetching footer settings:', error);
       throw error;
@@ -219,20 +249,53 @@ export class DatabaseStorage implements IStorage {
 
   async updateFooterSettings(settings: Partial<FooterSettings>): Promise<FooterSettings> {
     try {
+      console.log('Updating footer settings with:', settings);
       const [existing] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
+      console.log('Existing footer settings:', existing[0]);
 
       if (existing[0]) {
-        const [rows] = await pool.query(
+        await pool.query(
           'UPDATE footer_settings SET about_text = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?',
-          [settings.aboutText, settings.email, settings.phone, existing[0].id]
+          [
+            settings.aboutText || existing[0].about_text,
+            settings.email || existing[0].email,
+            settings.phone || existing[0].phone,
+            existing[0].id
+          ]
         );
-        return rows[0] as FooterSettings;
+
+        const [updated] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [existing[0].id]);
+        console.log('Raw updated footer settings from DB:', updated[0]);
+
+        const transformedSettings = {
+          id: updated[0].id,
+          aboutText: updated[0].about_text,
+          email: updated[0].email,
+          phone: updated[0].phone,
+          updatedAt: updated[0].updated_at
+        };
+
+        console.log('Transformed updated footer settings:', transformedSettings);
+        return transformedSettings;
       } else {
-        const [rows] = await pool.query(
+        const [result] = await pool.query(
           'INSERT INTO footer_settings (about_text, email, phone) VALUES (?, ?, ?)',
           [settings.aboutText, settings.email, settings.phone]
         );
-        return rows[0] as FooterSettings;
+
+        const [inserted] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [result.insertId]);
+        console.log('Raw inserted footer settings from DB:', inserted[0]);
+
+        const transformedSettings = {
+          id: inserted[0].id,
+          aboutText: inserted[0].about_text,
+          email: inserted[0].email,
+          phone: inserted[0].phone,
+          updatedAt: inserted[0].updated_at
+        };
+
+        console.log('Transformed inserted footer settings:', transformedSettings);
+        return transformedSettings;
       }
     } catch (error) {
       console.error('Error updating footer settings:', error);
