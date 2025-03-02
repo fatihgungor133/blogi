@@ -26,7 +26,10 @@ export default function Home() {
       <div className="container mx-auto p-4">
         <div className="grid gap-4">
           {[...Array(5)].map((_, i) => (
-            <Card key={i} className="animate-pulse bg-muted h-24" />
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="h-20 bg-muted" />
+              <CardContent className="h-96 bg-muted mt-4" />
+            </Card>
           ))}
         </div>
       </div>
@@ -59,7 +62,7 @@ export default function Home() {
           <Link key={content.id} href={`/post/${content.baslik_id}`}>
             <Card className="hover:bg-accent transition-colors cursor-pointer">
               <CardHeader>
-                <CardTitle>İçerik #{content.id}</CardTitle>
+                <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
               </CardHeader>
               <CardContent className="line-clamp-3">
                 {content.content}
