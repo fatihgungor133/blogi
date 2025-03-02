@@ -27,16 +27,15 @@ export function Seo({
 }: SeoProps) {
   const siteUrl = window.location.origin;
   const url = canonicalUrl || window.location.href;
-  const finalTitle = title || 'Blog';
 
   return (
     <Helmet>
-      <title>{finalTitle}</title>
+      <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
 
       {/* Open Graph */}
-      <meta property="og:title" content={finalTitle} />
+      <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
@@ -52,7 +51,7 @@ export function Seo({
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={finalTitle} />
+      <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       {imageUrl && <meta name="twitter:image" content={imageUrl} />}
 
@@ -65,7 +64,7 @@ export function Seo({
             "@type": "WebPage",
             "@id": url
           },
-          "headline": finalTitle,
+          "headline": title,
           "description": description,
           "image": imageUrl,
           "url": url,
@@ -75,7 +74,7 @@ export function Seo({
           }),
           "publisher": {
             "@type": "Organization",
-            "name": "Blog",
+            "name": title, // Changed to use the provided title
             "url": siteUrl
           }
         })}

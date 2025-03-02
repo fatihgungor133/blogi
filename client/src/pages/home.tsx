@@ -6,9 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import type { Content } from "@shared/schema";
-import type { SiteSettings } from "@/types/SiteSettings"; // Added import
-
+import type { Content, SiteSettings } from "@shared/schema";
 
 export default function Home() {
   const [page, setPage] = useState(1);

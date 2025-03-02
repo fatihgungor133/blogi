@@ -21,7 +21,6 @@ export function Layout({ children, title, description }: LayoutProps) {
     queryFn: () => fetch('/api/site/footer').then(res => res.json())
   });
 
-  // Title oluşturma mantığını güncelledik
   const siteName = siteSettings?.siteName || '';
 
   return (
@@ -30,6 +29,7 @@ export function Layout({ children, title, description }: LayoutProps) {
         <Seo 
           title={title ? `${title} | ${siteName}` : siteName}
           description={description || siteSettings.metaDescription || 'Blog içeriklerini keşfedin'}
+          type="website"
         />
       )}
       <Header siteName={siteName} />
