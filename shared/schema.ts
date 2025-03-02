@@ -18,4 +18,5 @@ export interface Content {
   baslik_id: number;
   content: string;
   title?: string;
+  slug?: string;
 }

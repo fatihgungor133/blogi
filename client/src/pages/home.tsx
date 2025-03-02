@@ -58,6 +58,7 @@ export default function Home() {
       <Seo 
         title="Blog Posts"
         description="Güncel blog yazıları ve içerikler"
+        type="website"
       />
 
       <Breadcrumb items={[{ label: "Blog Posts" }]} />
@@ -68,7 +69,10 @@ export default function Home() {
 
       <div className="grid gap-4">
         {titles.map((content) => (
-          <Link key={content.id} href={`/post/${content.baslik_id}`}>
+          <Link 
+            key={content.id} 
+            href={`/post/${content.baslik_id}/${content.slug || `icerik-${content.id}`}`}
+          >
             <Card className="hover:bg-accent transition-colors cursor-pointer">
               <CardHeader>
                 <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>

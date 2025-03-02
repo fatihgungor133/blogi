@@ -1,5 +1,6 @@
 import { pool } from './db';
 import type { Content } from '@shared/schema';
+import { createSlug } from '../client/src/lib/utils';
 
 export interface IStorage {
   getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}>;
@@ -17,8 +18,13 @@ export class DatabaseStorage implements IStorage {
       const [totalRows] = await pool.query('SELECT COUNT(*) as total FROM icerik');
       const total = totalRows[0].total;
 
+      const titlesWithSlug = (rows as Content[]).map(content => ({
+        ...content,
+        slug: content.title ? createSlug(content.title) : `icerik-${content.id}`
+      }));
+
       return {
-        titles: rows as Content[],
+        titles: titlesWithSlug,
         total: total as number
       };
     } catch (error) {
@@ -34,8 +40,13 @@ export class DatabaseStorage implements IStorage {
         [titleId]
       );
 
-      const content = rows[0];
-      return content as Content | undefined;
+      const content = rows[0] as Content | undefined;
+
+      if (content) {
+        content.slug = content.title ? createSlug(content.title) : `icerik-${content.id}`;
+      }
+
+      return content;
     } catch (error) {
       console.error('Error fetching content:', error);
       throw error;

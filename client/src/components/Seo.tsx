@@ -6,6 +6,13 @@ interface SeoProps {
   canonicalUrl?: string;
   type?: "website" | "article";
   imageUrl?: string;
+  publishedTime?: string;
+  modifiedTime?: string;
+  breadcrumb?: Array<{
+    position: number;
+    name: string;
+    item: string;
+  }>;
 }
 
 export function Seo({ 
@@ -13,7 +20,10 @@ export function Seo({
   description = "Blog içeriklerini keşfedin", 
   canonicalUrl,
   type = "website",
-  imageUrl 
+  imageUrl,
+  publishedTime,
+  modifiedTime,
+  breadcrumb 
 }: SeoProps) {
   const siteUrl = window.location.origin;
   const url = canonicalUrl || window.location.href;
@@ -30,6 +40,14 @@ export function Seo({
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
       {imageUrl && <meta property="og:image" content={imageUrl} />}
+
+      {/* Article specific */}
+      {type === "article" && publishedTime && (
+        <meta property="article:published_time" content={publishedTime} />
+      )}
+      {type === "article" && modifiedTime && (
+        <meta property="article:modified_time" content={modifiedTime} />
+      )}
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -50,6 +68,10 @@ export function Seo({
           "description": description,
           "image": imageUrl,
           "url": url,
+          ...(type === "article" && publishedTime && {
+            "datePublished": publishedTime,
+            "dateModified": modifiedTime || publishedTime,
+          }),
           "publisher": {
             "@type": "Organization",
             "name": "Blog",
@@ -57,6 +79,22 @@ export function Seo({
           }
         })}
       </script>
+
+      {/* Breadcrumb Schema */}
+      {breadcrumb && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": breadcrumb.map((item) => ({
+              "@type": "ListItem",
+              "position": item.position,
+              "name": item.name,
+              "item": item.item
+            }))
+          })}
+        </script>
+      )}
     </Helmet>
   );
 }
