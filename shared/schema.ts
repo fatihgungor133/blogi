@@ -10,7 +10,8 @@ export const titles = pgTable("titles", {
 export const contents = pgTable("icerik", {
   id: serial("id").primaryKey(),
   baslik_id: integer("baslik_id").notNull(),
-  content: text("content").notNull()
+  content: text("content").notNull(),
+  views: integer("views").default(0).notNull()
 });
 
 export interface Content {
@@ -19,4 +20,5 @@ export interface Content {
   content: string;
   title?: string;
   slug?: string;
+  views: number;
 }

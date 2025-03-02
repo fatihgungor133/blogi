@@ -44,5 +44,14 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/popular', async (req, res) => {
+    try {
+      const results = await storage.getPopularContent();
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch popular content' });
+    }
+  });
+
   return createServer(app);
 }
