@@ -5,6 +5,7 @@ import { createSlug } from '../client/src/lib/utils';
 export interface IStorage {
   getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}>;
   getContent(titleId: number): Promise<Content | undefined>;
+  searchContent(query: string): Promise<Content[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -49,6 +50,27 @@ export class DatabaseStorage implements IStorage {
       return content;
     } catch (error) {
       console.error('Error fetching content:', error);
+      throw error;
+    }
+  }
+
+  async searchContent(query: string): Promise<Content[]> {
+    try {
+      const [rows] = await pool.query(
+        `SELECT i.id, i.baslik_id, i.content, t.title 
+         FROM icerik i 
+         LEFT JOIN titles t ON i.baslik_id = t.id 
+         WHERE t.title LIKE ? OR i.content LIKE ?
+         LIMIT 10`,
+        [`%${query}%`, `%${query}%`]
+      );
+
+      return (rows as Content[]).map(content => ({
+        ...content,
+        slug: content.title ? createSlug(content.title) : `icerik-${content.id}`
+      }));
+    } catch (error) {
+      console.error('Error searching content:', error);
       throw error;
     }
   }

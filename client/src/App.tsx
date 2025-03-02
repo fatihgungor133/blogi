@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Post from "@/pages/post";
+import { Layout } from "@/components/Layout";
 
 function Router() {
   return (
@@ -21,7 +22,9 @@ function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <Router />
+        <Layout>
+          <Router />
+        </Layout>
         <Toaster />
       </QueryClientProvider>
     </HelmetProvider>
