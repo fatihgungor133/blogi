@@ -7,6 +7,7 @@ import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
+import { ShareButtons } from "@/components/ShareButtons";
 
 export default function Post() {
   const { id, slug } = useParams();
@@ -44,6 +45,7 @@ export default function Post() {
   const currentSlug = content.slug || `icerik-${content.id}`;
   const contentWithIds = addHeadingIds(content.content);
   const headings = parseHeadings(content.content);
+  const currentUrl = `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`;
 
   // Redirect if slug doesn't match
   if (slug !== currentSlug) {
@@ -73,11 +75,11 @@ export default function Post() {
         title={content.title || `İçerik #${content.id}`}
         description={truncatedContent}
         type="article"
-        canonicalUrl={`/post/${content.baslik_id}/${currentSlug}`}
+        canonicalUrl={currentUrl}
         breadcrumb={[
           { position: 1, name: "Ana Sayfa", item: "/" },
           { position: 2, name: "Blog Posts", item: "/" },
-          { position: 3, name: content.title || `İçerik #${content.id}`, item: `/post/${content.baslik_id}/${currentSlug}` }
+          { position: 3, name: content.title || `İçerik #${content.id}`, item: currentUrl }
         ]}
       />
 
@@ -103,7 +105,14 @@ export default function Post() {
           <h1 className="text-3xl font-bold mb-6">
             {content.title || `İçerik #${content.id}`}
           </h1>
-          <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: contentWithIds }} />
+
+          <ShareButtons 
+            url={currentUrl}
+            title={content.title || `İçerik #${content.id}`}
+            description={truncatedContent}
+          />
+
+          <div className="prose prose-lg max-w-none mt-6" dangerouslySetInnerHTML={{ __html: contentWithIds }} />
 
           {headings.length > 0 && (
             <div className="mt-8 border-t pt-6">
