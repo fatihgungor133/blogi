@@ -114,6 +114,13 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get('/api/admin/auth', async (req, res) => {
+    if (!req.session?.adminId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    res.json({ authenticated: true });
+  });
+
   app.post('/api/admin/logout', (req, res) => {
     req.session.destroy(() => {
       res.json({ message: "Çıkış yapıldı" });
