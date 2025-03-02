@@ -3,6 +3,9 @@ import bcrypt from 'bcrypt';
 
 async function createTables() {
   try {
+    // Drop existing tables to start fresh
+    await pool.query('DROP TABLE IF EXISTS admins');
+
     // Admins tablosu
     await pool.query(`
       CREATE TABLE IF NOT EXISTS admins (
