@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { Eye } from "lucide-react";
 import type { Content } from "@shared/schema";
 
 export default function Popular() {
@@ -12,7 +12,7 @@ export default function Popular() {
     queryFn: () => 
       fetch('/api/popular').then(res => {
         if (!res.ok) {
-          throw new Error('Failed to fetch popular content');
+          throw new Error('Popüler içerikler yüklenirken hata oluştu');
         }
         return res.json();
       })
@@ -54,7 +54,13 @@ export default function Popular() {
           >
             <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
               <CardHeader>
-                <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
+                <div className="flex justify-between items-start">
+                  <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Eye className="h-4 w-4 mr-1" />
+                    <span>{content.views}</span>
+                  </div>
+                </div>
               </CardHeader>
             </Card>
           </Link>

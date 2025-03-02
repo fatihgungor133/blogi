@@ -83,7 +83,7 @@ export class DatabaseStorage implements IStorage {
          FROM icerik i 
          LEFT JOIN titles t ON i.baslik_id = t.id 
          ORDER BY i.views DESC 
-         LIMIT 10`
+         LIMIT 40`
       );
 
       return (rows as Content[]).map(content => ({
