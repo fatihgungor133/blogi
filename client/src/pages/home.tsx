@@ -10,14 +10,14 @@ import type { Content } from "@shared/schema";
 
 export default function Home() {
   const [page, setPage] = useState(1);
-  const limit = 12; // Sayfa başına daha fazla içerik
+  const limit = 40; // Sayfa başına 40 içerik
 
   const { data, isLoading, error } = useQuery<{titles: Content[], total: number}>({
     queryKey: ['/api/titles', page, limit],
     queryFn: () => 
       fetch(`/api/titles?page=${page}&limit=${limit}`).then(res => {
         if (!res.ok) {
-          throw new Error('Failed to fetch content');
+          throw new Error('İçerik yüklenirken hata oluştu');
         }
         return res.json();
       })
@@ -42,7 +42,7 @@ export default function Home() {
       <div className="container mx-auto p-4">
         <Card className="bg-destructive/10">
           <CardHeader>
-            <CardTitle>Error loading content</CardTitle>
+            <CardTitle>İçerik yüklenirken hata oluştu</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -55,15 +55,15 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4">
       <Seo 
-        title="Blog Posts"
+        title="Blog Yazıları"
         description="Güncel blog yazıları ve içerikler"
         type="website"
       />
 
-      <Breadcrumb items={[{ label: "Blog Posts" }]} />
+      <Breadcrumb items={[{ label: "Blog Yazıları" }]} />
 
       <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-        Blog Posts
+        Blog Yazıları
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,15 +88,15 @@ export default function Home() {
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+            <ArrowLeft className="mr-2 h-4 w-4" /> Önceki
           </Button>
-          <span>Page {page} of {totalPages}</span>
+          <span>Sayfa {page} / {totalPages}</span>
           <Button
             variant="outline"
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
           >
-            Next <ArrowRight className="ml-2 h-4 w-4" />
+            Sonraki <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )}
