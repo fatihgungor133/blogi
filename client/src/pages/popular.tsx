@@ -9,7 +9,7 @@ import type { Content } from "@shared/schema";
 export default function Popular() {
   const { data: titles, isLoading } = useQuery<Content[]>({
     queryKey: ['/api/popular'],
-    queryFn: () => 
+    queryFn: () =>
       fetch('/api/popular').then(res => {
         if (!res.ok) {
           throw new Error('Popüler içerikler yüklenirken hata oluştu');
@@ -34,7 +34,7 @@ export default function Popular() {
 
   return (
     <div className="container mx-auto p-4">
-      <Seo 
+      <Seo
         title="Popüler İçerikler"
         description="En çok okunan blog yazıları"
         type="website"
@@ -48,15 +48,17 @@ export default function Popular() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {titles?.map((content) => (
-          <Link 
-            key={content.id} 
+          <Link
+            key={content.id}
             href={`/post/${content.baslik_id}/${content.slug || `icerik-${content.id}`}`}
           >
-            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
+            <Card className="hover:bg-accent transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg cursor-pointer h-full group">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <CardTitle className="group-hover:translate-x-1 transition-transform duration-300">
+                    {content.title || `İçerik #${content.id}`}
+                  </CardTitle>
+                  <div className="flex items-center text-sm text-muted-foreground group-hover:translate-x-1 transition-transform duration-300">
                     <Eye className="h-4 w-4 mr-1" />
                     <span>{content.views}</span>
                   </div>

@@ -78,9 +78,11 @@ export default function Home() {
             key={content.id} 
             href={`/post/${content.baslik_id}/${content.slug || `icerik-${content.id}`}`}
           >
-            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
+            <Card className="hover:bg-accent transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg cursor-pointer h-full group">
               <CardHeader>
-                <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
+                <CardTitle className="group-hover:translate-x-1 transition-transform duration-300">
+                  {content.title || `İçerik #${content.id}`}
+                </CardTitle>
               </CardHeader>
             </Card>
           </Link>
