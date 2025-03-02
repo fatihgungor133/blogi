@@ -14,7 +14,7 @@ export function Header() {
 
   const { data: searchResults } = useQuery<Content[]>({
     queryKey: ['/api/search', debouncedSearch],
-    queryFn: () => 
+    queryFn: () =>
       fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}`).then(res => res.json()),
     enabled: debouncedSearch.length > 2
   });
@@ -41,27 +41,23 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex-1 flex justify-start">
-          <nav className="flex items-center space-x-6">
-            <Link href="/">
-              <span className="text-sm font-medium hover:text-primary cursor-pointer">Ana Sayfa</span>
-            </Link>
-            <Link href="/popular">
-              <span className="text-sm font-medium hover:text-primary cursor-pointer">Popüler İçerikler</span>
-            </Link>
-          </nav>
-        </div>
+      <div className="max-w-screen-xl mx-auto px-4 flex h-16 items-center">
+        <Link href="/">
+          <div className="flex items-center space-x-2 cursor-pointer">
+            <span className="text-xl font-bold">Blog</span>
+          </div>
+        </Link>
 
-        <div className="flex-1 flex justify-center">
+        <nav className="ml-8 flex items-center space-x-6">
           <Link href="/">
-            <div className="flex items-center space-x-2 cursor-pointer">
-              <span className="text-xl font-bold">Blog</span>
-            </div>
+            <span className="text-sm font-medium hover:text-primary cursor-pointer">Ana Sayfa</span>
           </Link>
-        </div>
+          <Link href="/popular">
+            <span className="text-sm font-medium hover:text-primary cursor-pointer">Popüler İçerikler</span>
+          </Link>
+        </nav>
 
-        <div className="flex-1 flex justify-end">
+        <div className="ml-auto">
           <div className="relative w-64" ref={searchRef}>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -74,8 +70,8 @@ export function Header() {
               <div className="absolute top-full mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
                 <div className="p-2">
                   {searchResults.map((result) => (
-                    <Link 
-                      key={result.id} 
+                    <Link
+                      key={result.id}
                       href={`/post/${result.baslik_id}/${result.slug || `icerik-${result.id}`}`}
                       onClick={handleSearchResultClick}
                     >
