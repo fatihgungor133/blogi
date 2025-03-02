@@ -73,9 +73,9 @@ export function Header() {
                       key={result.id} 
                       href={`/post/${result.baslik_id}/${result.slug || `icerik-${result.id}`}`}
                     >
-                      <a className="block rounded-sm px-2 py-1 hover:bg-accent">
+                      <div className="block rounded-sm px-2 py-1 hover:bg-accent cursor-pointer">
                         {result.title || `İçerik #${result.id}`}
-                      </a>
+                      </div>
                     </Link>
                   ))}
                 </div>
