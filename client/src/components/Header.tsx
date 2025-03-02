@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { Input } from "./ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -16,6 +16,8 @@ import { Search } from "lucide-react";
 
 export function Header() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
 
   const { data: searchResults } = useQuery<Content[]>({
@@ -24,6 +26,28 @@ export function Header() {
       fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}`).then(res => res.json()),
     enabled: debouncedSearch.length > 2
   });
+
+  // Arama sonuçları dışında bir yere tıklandığında sonuçları kapat
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Arama yapıldığında sonuçları göster
+  useEffect(() => {
+    setIsSearchOpen(debouncedSearch.length > 2 && (searchResults?.length ?? 0) > 0);
+  }, [debouncedSearch, searchResults]);
+
+  const handleSearchResultClick = () => {
+    setIsSearchOpen(false);
+    setSearchTerm("");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -57,7 +81,7 @@ export function Header() {
         </NavigationMenu>
 
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="relative w-full max-w-sm">
+          <div className="relative w-full max-w-sm" ref={searchRef}>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="İçeriklerde ara..."
@@ -65,13 +89,14 @@ export function Header() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
             />
-            {searchResults && searchResults.length > 0 && searchTerm && (
+            {isSearchOpen && searchResults && searchResults.length > 0 && (
               <div className="absolute top-full mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
                 <div className="p-2">
                   {searchResults.map((result) => (
                     <Link 
                       key={result.id} 
                       href={`/post/${result.baslik_id}/${result.slug || `icerik-${result.id}`}`}
+                      onClick={handleSearchResultClick}
                     >
                       <div className="block rounded-sm px-2 py-1 hover:bg-accent cursor-pointer">
                         {result.title || `İçerik #${result.id}`}
