@@ -5,6 +5,7 @@ import { requireAuth } from "./middleware/auth";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import memorystore from "memorystore";
+import { pool } from './db'; // Fixed import
 
 const MemoryStore = memorystore(session);
 
@@ -198,6 +199,37 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error('Error in /api/site/footer:', error);
       res.status(500).json({ error: 'Footer ayarları yüklenirken hata oluştu' });
+    }
+  });
+
+  // Add after other admin routes
+  app.post('/api/admin/change-password', requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!req.session?.adminId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get admin from database
+      const admin = await storage.getAdminByUsername('admin'); // Since we only have one admin
+      if (!admin) {
+        return res.status(404).json({ message: "Admin not found" });
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Mevcut şifre yanlış" });
+      }
+
+      // Hash new password and update
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await pool.query('UPDATE admins SET password = $1 WHERE id = $2', [hashedPassword, admin.id]);
+
+      res.json({ message: "Şifre başarıyla güncellendi" });
+    } catch (error) {
+      console.error('Password change error:', error);
+      res.status(500).json({ message: "Şifre değiştirme sırasında bir hata oluştu" });
     }
   });
 

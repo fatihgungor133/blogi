@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Settings, LogOut } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, LogOut, Key } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -13,6 +20,40 @@ export default function AdminDashboard() {
       setLocation("/admin/login");
     } catch (error) {
       console.error("Çıkış yapılırken hata oluştu:", error);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        description: "Yeni şifre en az 6 karakter olmalıdır",
+      });
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await apiRequest("POST", "/api/admin/change-password", {
+        currentPassword,
+        newPassword,
+      });
+
+      toast({
+        description: "Şifreniz başarıyla güncellendi",
+      });
+
+      // Clear form
+      setCurrentPassword("");
+      setNewPassword("");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: error instanceof Error ? error.message : "Şifre değiştirme sırasında bir hata oluştu",
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -46,13 +87,53 @@ export default function AdminDashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 space-y-6">
         <Card>
-          <CardContent className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Hoş Geldiniz</h2>
+          <CardHeader>
+            <CardTitle>Hoş Geldiniz</CardTitle>
+          </CardHeader>
+          <CardContent>
             <p className="text-muted-foreground">
               Sol menüden site ayarlarını düzenleyebilirsiniz.
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Şifre Değiştir
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Mevcut Şifre"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Yeni Şifre"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                disabled={isChangingPassword}
+                className="w-full"
+              >
+                {isChangingPassword ? "Şifre Değiştiriliyor..." : "Şifre Değiştir"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </main>
