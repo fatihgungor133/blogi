@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { SiteSettings, FooterSettings } from "@shared/schema";
+import { useEffect } from "react";
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -21,13 +22,40 @@ export default function AdminSettings() {
     queryKey: ['/api/admin/settings/footer'],
   });
 
-  const { register: siteRegister, handleSubmit: handleSiteSubmit } = useForm({
-    defaultValues: siteSettings,
+  const { register: siteRegister, handleSubmit: handleSiteSubmit, reset: resetSiteForm } = useForm({
+    defaultValues: {
+      siteName: '',
+      metaDescription: ''
+    }
   });
 
-  const { register: footerRegister, handleSubmit: handleFooterSubmit } = useForm({
-    defaultValues: footerSettings,
+  const { register: footerRegister, handleSubmit: handleFooterSubmit, reset: resetFooterForm } = useForm({
+    defaultValues: {
+      aboutText: '',
+      email: '',
+      phone: ''
+    }
   });
+
+  // Form değerlerini siteSettings ve footerSettings yüklendiğinde güncelle
+  useEffect(() => {
+    if (siteSettings) {
+      resetSiteForm({
+        siteName: siteSettings.siteName,
+        metaDescription: siteSettings.metaDescription || ''
+      });
+    }
+  }, [siteSettings, resetSiteForm]);
+
+  useEffect(() => {
+    if (footerSettings) {
+      resetFooterForm({
+        aboutText: footerSettings.aboutText,
+        email: footerSettings.email || '',
+        phone: footerSettings.phone || ''
+      });
+    }
+  }, [footerSettings, resetFooterForm]);
 
   const onSiteSubmit = async (data: any) => {
     try {
