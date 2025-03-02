@@ -13,7 +13,7 @@ export class DatabaseStorage implements IStorage {
   async getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}> {
     try {
       const [rows] = await pool.query(
-        'SELECT i.id, i.baslik_id, i.content, i.views, t.title FROM icerik i LEFT JOIN titles t ON i.baslik_id = t.id LIMIT ?, ?',
+        'SELECT i.id, i.baslik_id, i.content, i.views, t.title FROM icerik i LEFT JOIN titles t ON i.baslik_id = t.id ORDER BY i.id DESC LIMIT ?, ?',
         [(page - 1) * limit, limit]
       );
 
