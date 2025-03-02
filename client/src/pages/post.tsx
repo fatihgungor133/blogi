@@ -56,7 +56,7 @@ export default function Post() {
   // Schema.org TableOfContents markup
   const tableOfContentsSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "Makale",
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`
@@ -78,7 +78,7 @@ export default function Post() {
         canonicalUrl={currentUrl}
         breadcrumb={[
           { position: 1, name: "Ana Sayfa", item: "/" },
-          { position: 2, name: "Blog Posts", item: "/" },
+          { position: 2, name: "Blog Yazıları", item: "/" },
           { position: 3, name: content.title || `İçerik #${content.id}`, item: currentUrl }
         ]}
       />
@@ -89,7 +89,7 @@ export default function Post() {
 
       <Breadcrumb 
         items={[
-          { label: "Blog Posts", href: "/" },
+          { label: "Blog Yazıları", href: "/" },
           { label: content.title || `İçerik #${content.id}` }
         ]} 
       />
