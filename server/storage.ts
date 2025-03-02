@@ -1,5 +1,5 @@
 import { pool } from './db';
-import type { Content } from '@shared/schema';
+import type { Content, Admin, SiteSettings, FooterSettings } from '@shared/schema';
 import { createSlug } from '../client/src/lib/utils';
 
 export interface IStorage {
@@ -7,6 +7,11 @@ export interface IStorage {
   getContent(titleId: number): Promise<Content | undefined>;
   searchContent(query: string): Promise<Content[]>;
   getPopularContent(): Promise<Content[]>;
+  getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getSiteSettings(): Promise<SiteSettings>;
+  updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings>;
+  getFooterSettings(): Promise<FooterSettings>;
+  updateFooterSettings(settings: Partial<FooterSettings>): Promise<FooterSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -92,6 +97,85 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error fetching popular content:', error);
+      throw error;
+    }
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    try {
+      const [rows] = await pool.query(
+        'SELECT * FROM admins WHERE username = ?',
+        [username]
+      );
+      return rows[0] as Admin | undefined;
+    } catch (error) {
+      console.error('Error fetching admin:', error);
+      throw error;
+    }
+  }
+
+  async getSiteSettings(): Promise<SiteSettings> {
+    try {
+      const [rows] = await pool.query('SELECT * FROM site_settings LIMIT 1');
+      return rows[0] as SiteSettings;
+    } catch (error) {
+      console.error('Error fetching site settings:', error);
+      throw error;
+    }
+  }
+
+  async updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
+    try {
+      const [existing] = await pool.query('SELECT * FROM site_settings LIMIT 1');
+
+      if (existing[0]) {
+        const [rows] = await pool.query(
+          'UPDATE site_settings SET site_name = ?, updated_at = NOW() WHERE id = ?',
+          [settings.siteName, existing[0].id]
+        );
+        return rows[0] as SiteSettings;
+      } else {
+        const [rows] = await pool.query(
+          'INSERT INTO site_settings (site_name) VALUES (?)',
+          [settings.siteName]
+        );
+        return rows[0] as SiteSettings;
+      }
+    } catch (error) {
+      console.error('Error updating site settings:', error);
+      throw error;
+    }
+  }
+
+  async getFooterSettings(): Promise<FooterSettings> {
+    try {
+      const [rows] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
+      return rows[0] as FooterSettings;
+    } catch (error) {
+      console.error('Error fetching footer settings:', error);
+      throw error;
+    }
+  }
+
+  async updateFooterSettings(settings: Partial<FooterSettings>): Promise<FooterSettings> {
+    try {
+      const [existing] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
+
+      if (existing[0]) {
+        const [rows] = await pool.query(
+          'UPDATE footer_settings SET about_text = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?',
+          [settings.aboutText, settings.email, settings.phone, existing[0].id]
+        );
+        return rows[0] as FooterSettings;
+      } else {
+        const [rows] = await pool.query(
+          'INSERT INTO footer_settings (about_text, email, phone) VALUES (?, ?, ?)',
+          [settings.aboutText, settings.email, settings.phone]
+        );
+        return rows[0] as FooterSettings;
+      }
+    } catch (error) {
+      console.error('Error updating footer settings:', error);
       throw error;
     }
   }
