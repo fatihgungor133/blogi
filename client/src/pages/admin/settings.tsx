@@ -31,6 +31,7 @@ export default function AdminSettings() {
 
   const onSiteSubmit = async (data: any) => {
     try {
+      console.log('Submitting site settings:', data);
       await apiRequest("PATCH", "/api/admin/settings/site", data);
 
       // Tüm ilgili queryleri invalidate et

@@ -119,6 +119,17 @@ export class DatabaseStorage implements IStorage {
   async getSiteSettings(): Promise<SiteSettings> {
     try {
       const [rows] = await pool.query('SELECT * FROM site_settings LIMIT 1');
+
+      if (!rows[0]) {
+        // Eğer ayar yoksa varsayılan ayarları oluştur
+        const [result] = await pool.query(
+          'INSERT INTO site_settings (site_name, meta_description) VALUES (?, ?)',
+          ['Blog', 'Modern, çok dilli blog platformu']
+        );
+        const [inserted] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [result.insertId]);
+        return inserted[0] as SiteSettings;
+      }
+
       return rows[0] as SiteSettings;
     } catch (error) {
       console.error('Error fetching site settings:', error);
@@ -128,17 +139,17 @@ export class DatabaseStorage implements IStorage {
 
   async updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
     try {
+      console.log('Updating site settings with:', settings);
       const [existing] = await pool.query('SELECT * FROM site_settings LIMIT 1');
 
       if (existing[0]) {
-        // Önce güncelleme yap
         await pool.query(
           'UPDATE site_settings SET site_name = ?, meta_description = ?, updated_at = NOW() WHERE id = ?',
           [settings.siteName, settings.metaDescription, existing[0].id]
         );
 
-        // Sonra güncel veriyi getir
         const [updated] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [existing[0].id]);
+        console.log('Updated site settings:', updated[0]);
         return updated[0] as SiteSettings;
       } else {
         const [result] = await pool.query(
@@ -147,6 +158,7 @@ export class DatabaseStorage implements IStorage {
         );
 
         const [inserted] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [result.insertId]);
+        console.log('Inserted site settings:', inserted[0]);
         return inserted[0] as SiteSettings;
       }
     } catch (error) {
