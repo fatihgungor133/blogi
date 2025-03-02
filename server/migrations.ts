@@ -32,6 +32,7 @@ async function createTables() {
       CREATE TABLE IF NOT EXISTS site_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
         site_name VARCHAR(100) NOT NULL,
+        meta_description TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -48,8 +49,8 @@ async function createTables() {
 
     // Varsayılan site ayarları
     await pool.query(`
-      INSERT INTO site_settings (site_name)
-      SELECT 'Blog'
+      INSERT INTO site_settings (site_name, meta_description)
+      SELECT 'Blog', 'Modern, çok dilli blog platformu'
       WHERE NOT EXISTS (SELECT 1 FROM site_settings LIMIT 1)
     `);
 

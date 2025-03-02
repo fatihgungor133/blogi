@@ -1,4 +1,10 @@
-export function Footer() {
+import type { FooterSettings } from "@shared/schema";
+
+interface FooterProps {
+  settings?: FooterSettings;
+}
+
+export function Footer({ settings }: FooterProps) {
   return (
     <footer className="bg-background border-t">
       <div className="container mx-auto px-4 py-8">
@@ -6,7 +12,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Hakkımızda</h3>
             <p className="text-muted-foreground">
-              Modern ve SEO uyumlu blog platformu
+              {settings?.aboutText || 'Modern ve SEO uyumlu blog platformu'}
             </p>
           </div>
           <div>
@@ -32,8 +38,8 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">İletişim</h3>
             <p className="text-muted-foreground">
-              Email: info@example.com<br />
-              Tel: +90 212 123 45 67
+              Email: {settings?.email || 'info@example.com'}<br />
+              Tel: {settings?.phone || '+90 212 123 45 67'}
             </p>
           </div>
         </div>

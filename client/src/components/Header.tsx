@@ -6,7 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { Content } from "@shared/schema";
 import { Search } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  siteName?: string;
+}
+
+export function Header({ siteName = 'Blog' }: HeaderProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -44,7 +48,7 @@ export function Header() {
       <div className="max-w-screen-xl mx-auto px-4 flex h-16 items-center">
         <Link href="/">
           <div className="flex items-center space-x-2 cursor-pointer">
-            <span className="text-xl font-bold">Blog</span>
+            <span className="text-xl font-bold">{siteName}</span>
           </div>
         </Link>
 

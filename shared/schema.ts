@@ -24,6 +24,7 @@ export const admins = pgTable("admins", {
 export const siteSettings = pgTable("site_settings", {
   id: serial("id").primaryKey(),
   siteName: varchar("site_name", { length: 100 }).notNull(),
+  metaDescription: text("meta_description"),
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
@@ -55,6 +56,7 @@ export interface Admin {
 export interface SiteSettings {
   id: number;
   siteName: string;
+  metaDescription: string | null;
   updatedAt: Date;
 }
 

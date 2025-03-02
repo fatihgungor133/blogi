@@ -32,7 +32,7 @@ export default function AdminSettings() {
   const onSiteSubmit = async (data: any) => {
     try {
       await apiRequest("PATCH", "/api/admin/settings/site", data);
-      await queryClient.invalidateQueries({ queryKey: ['/api/admin/settings/site'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/admin/settings/site', '/api/site/settings'] });
       toast({ description: "Site ayarları güncellendi" });
     } catch (error) {
       toast({ variant: "destructive", description: "Bir hata oluştu" });
@@ -42,7 +42,7 @@ export default function AdminSettings() {
   const onFooterSubmit = async (data: any) => {
     try {
       await apiRequest("PATCH", "/api/admin/settings/footer", data);
-      await queryClient.invalidateQueries({ queryKey: ['/api/admin/settings/footer'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/admin/settings/footer', '/api/site/footer'] });
       toast({ description: "Footer ayarları güncellendi" });
     } catch (error) {
       toast({ variant: "destructive", description: "Bir hata oluştu" });
@@ -61,6 +61,13 @@ export default function AdminSettings() {
               <Input
                 {...siteRegister("siteName")}
                 placeholder="Site Adı"
+              />
+            </div>
+            <div className="space-y-2">
+              <Textarea
+                {...siteRegister("metaDescription")}
+                placeholder="Meta Açıklama"
+                className="min-h-[100px]"
               />
             </div>
             <Button type="submit">Kaydet</Button>

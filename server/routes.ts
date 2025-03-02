@@ -24,7 +24,7 @@ export async function registerRoutes(app: Express) {
       secret: process.env.SESSION_SECRET || "gizli-anahtar",
       resave: false,
       saveUninitialized: false,
-      cookie: { 
+      cookie: {
         secure: process.env.NODE_ENV === "production",
         maxAge: 86400000 // 24 saat
       }
@@ -163,6 +163,25 @@ export async function registerRoutes(app: Express) {
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: 'Footer ayarları güncellenirken hata oluştu' });
+    }
+  });
+
+  // Public site settings API
+  app.get('/api/site/settings', async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: 'Site ayarları yüklenirken hata oluştu' });
+    }
+  });
+
+  app.get('/api/site/footer', async (req, res) => {
+    try {
+      const settings = await storage.getFooterSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: 'Footer ayarları yüklenirken hata oluştu' });
     }
   });
 
