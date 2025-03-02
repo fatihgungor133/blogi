@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Post from "@/pages/post";
+import Popular from "@/pages/popular";
 import { Layout } from "@/components/Layout";
 
 function Router() {
@@ -13,6 +14,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/post/:id/:slug" component={Post} />
+      <Route path="/popular" component={Popular} />
       <Route component={NotFound} />
     </Switch>
   );
