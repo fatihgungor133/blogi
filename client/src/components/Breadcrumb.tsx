@@ -14,10 +14,10 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
       <ol className="flex items-center space-x-2">
         <li>
           <Link href="/">
-            <a className="flex items-center hover:text-foreground">
+            <div className="flex items-center hover:text-foreground cursor-pointer">
               <Home className="h-4 w-4" />
               <span className="sr-only">Ana Sayfa</span>
-            </a>
+            </div>
           </Link>
         </li>
         {items.map((item, index) => (
@@ -25,7 +25,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             <ChevronRight className="h-4 w-4 mx-1" />
             {item.href ? (
               <Link href={item.href}>
-                <a className="hover:text-foreground">{item.label}</a>
+                <div className="hover:text-foreground cursor-pointer">{item.label}</div>
               </Link>
             ) : (
               <span aria-current="page">{item.label}</span>
