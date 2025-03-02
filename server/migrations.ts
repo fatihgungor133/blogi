@@ -3,10 +3,7 @@ import bcrypt from 'bcrypt';
 
 async function createTables() {
   try {
-    // Drop existing tables to start fresh
-    await pool.query('DROP TABLE IF EXISTS admins, site_settings, footer_settings');
-
-    // Admins tablosu
+    // Admins tablosu - varsa bırak, yoksa oluştur
     await pool.query(`
       CREATE TABLE IF NOT EXISTS admins (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -16,18 +13,17 @@ async function createTables() {
       )
     `);
 
-    // Varsayılan admin şifresini hash'le
+    // Varsayılan admin kullanıcısı - sadece tablo boşsa ekle
     const defaultPassword = 'admin123';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    // Varsayılan admin kullanıcısı
     await pool.query(`
       INSERT INTO admins (username, password)
       SELECT 'admin', ? 
       WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'admin')
     `, [hashedPassword]);
 
-    // Diğer tablolar aynı kalacak...
+    // Site ayarları tablosu - varsa bırak, yoksa oluştur
     await pool.query(`
       CREATE TABLE IF NOT EXISTS site_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -37,6 +33,7 @@ async function createTables() {
       )
     `);
 
+    // Footer ayarları tablosu - varsa bırak, yoksa oluştur
     await pool.query(`
       CREATE TABLE IF NOT EXISTS footer_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,14 +44,14 @@ async function createTables() {
       )
     `);
 
-    // Varsayılan site ayarları
+    // Varsayılan site ayarları - sadece tablo boşsa ekle
     await pool.query(`
       INSERT INTO site_settings (site_name, meta_description)
       SELECT 'Blog', 'Modern, çok dilli blog platformu'
       WHERE NOT EXISTS (SELECT 1 FROM site_settings LIMIT 1)
     `);
 
-    // Varsayılan footer ayarları
+    // Varsayılan footer ayarları - sadece tablo boşsa ekle
     await pool.query(`
       INSERT INTO footer_settings (about_text, email, phone)
       SELECT 'Modern ve SEO uyumlu blog platformu', 'info@example.com', '+90 212 123 45 67'
