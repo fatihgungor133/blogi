@@ -7,10 +7,16 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import type { Content } from "@shared/schema";
+import type { SiteSettings } from "@/types/SiteSettings"; // Added import
+
 
 export default function Home() {
   const [page, setPage] = useState(1);
-  const limit = 40; // Sayfa başına 40 içerik
+  const limit = 40;
+
+  const { data: siteSettings } = useQuery<SiteSettings>({
+    queryKey: ['/api/site/settings']
+  });
 
   const { data, isLoading, error } = useQuery<{titles: Content[], total: number}>({
     queryKey: ['/api/titles', page, limit],
@@ -54,11 +60,13 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4">
-      <Seo 
-        title="Ana Sayfa"
-        description="Güncel blog yazıları ve içerikler"
-        type="website"
-      />
+      {siteSettings && (
+        <Seo 
+          title={siteSettings.siteName}
+          description={siteSettings.metaDescription || "Güncel blog yazıları ve içerikler"}
+          type="website"
+        />
+      )}
 
       <Breadcrumb items={[{ label: "Blog Yazıları" }]} />
 

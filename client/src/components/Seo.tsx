@@ -15,27 +15,28 @@ interface SeoProps {
   }>;
 }
 
-export function Seo({ 
-  title, 
-  description = "Blog içeriklerini keşfedin", 
+export function Seo({
+  title,
+  description = "Blog içeriklerini keşfedin",
   canonicalUrl,
   type = "website",
   imageUrl,
   publishedTime,
   modifiedTime,
-  breadcrumb 
+  breadcrumb
 }: SeoProps) {
   const siteUrl = window.location.origin;
   const url = canonicalUrl || window.location.href;
+  const finalTitle = title || 'Blog';
 
   return (
     <Helmet>
-      <title>{title} | Blog</title>
+      <title>{finalTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
 
       {/* Open Graph */}
-      <meta property="og:title" content={title} />
+      <meta property="og:title" content={finalTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
@@ -51,7 +52,7 @@ export function Seo({
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
+      <meta name="twitter:title" content={finalTitle} />
       <meta name="twitter:description" content={description} />
       {imageUrl && <meta name="twitter:image" content={imageUrl} />}
 
@@ -64,7 +65,7 @@ export function Seo({
             "@type": "WebPage",
             "@id": url
           },
-          "headline": title,
+          "headline": finalTitle,
           "description": description,
           "image": imageUrl,
           "url": url,

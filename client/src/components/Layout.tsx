@@ -22,15 +22,16 @@ export function Layout({ children, title, description }: LayoutProps) {
   });
 
   // Title oluşturma mantığını güncelledik
-  const siteName = siteSettings?.siteName || 'Blog';
-  const pageTitle = title ? `${title} | ${siteName}` : siteName;
+  const siteName = siteSettings?.siteName || '';
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Seo 
-        title={pageTitle}
-        description={description || siteSettings?.metaDescription || 'Blog içeriklerini keşfedin'}
-      />
+      {siteSettings && (
+        <Seo 
+          title={title ? `${title} | ${siteName}` : siteName}
+          description={description || siteSettings.metaDescription || 'Blog içeriklerini keşfedin'}
+        />
+      )}
       <Header siteName={siteName} />
       <main className="flex-grow">
         {children}
