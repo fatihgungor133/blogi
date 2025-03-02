@@ -24,7 +24,10 @@ export async function registerRoutes(app: Express) {
       secret: process.env.SESSION_SECRET || "gizli-anahtar",
       resave: false,
       saveUninitialized: false,
-      cookie: { secure: process.env.NODE_ENV === "production" }
+      cookie: { 
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 86400000 // 24 saat
+      }
     })
   );
 
@@ -103,6 +106,7 @@ export async function registerRoutes(app: Express) {
 
       req.session.adminId = admin.id;
       console.log('Session set, adminId:', admin.id);
+      await req.session.save(); // Force save session
       res.json({ message: "Giriş başarılı" });
     } catch (error) {
       console.error('Login error:', error);
@@ -119,6 +123,7 @@ export async function registerRoutes(app: Express) {
   // Admin ayarları API rotaları
   app.get('/api/admin/settings/site', requireAuth, async (req, res) => {
     try {
+      console.log('Session in site settings:', req.session);
       const settings = await storage.getSiteSettings();
       res.json(settings);
     } catch (error) {
@@ -128,6 +133,7 @@ export async function registerRoutes(app: Express) {
 
   app.patch('/api/admin/settings/site', requireAuth, async (req, res) => {
     try {
+      console.log('Session in update site settings:', req.session);
       const settings = await storage.updateSiteSettings(req.body);
       res.json(settings);
     } catch (error) {
