@@ -28,8 +28,8 @@ export function Layout({ children, title, description }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Seo 
-        title={pageTitle}
-        description={description || siteSettings?.metaDescription || 'Blog içeriklerini keşfedin'}
+        title={siteSettings?.siteName || 'Blog'}
+        description={siteSettings?.metaDescription || 'Blog içeriklerini keşfedin'}
       />
       <Header siteName={siteSettings?.siteName} />
       <main className="flex-grow">

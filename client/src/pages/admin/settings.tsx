@@ -32,7 +32,12 @@ export default function AdminSettings() {
   const onSiteSubmit = async (data: any) => {
     try {
       await apiRequest("PATCH", "/api/admin/settings/site", data);
-      await queryClient.invalidateQueries({ queryKey: ['/api/admin/settings/site', '/api/site/settings'] });
+
+      // Tüm ilgili queryleri invalidate et
+      await queryClient.invalidateQueries({ 
+        queryKey: [['/api/admin/settings/site'], ['/api/site/settings']]
+      });
+
       toast({ description: "Site ayarları güncellendi" });
     } catch (error) {
       toast({ variant: "destructive", description: "Bir hata oluştu" });
