@@ -4,14 +4,6 @@ import { Input } from "./ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
 import type { Content } from "@shared/schema";
-import { 
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { Search } from "lucide-react";
 
 export function Header() {
@@ -27,7 +19,6 @@ export function Header() {
     enabled: debouncedSearch.length > 2
   });
 
-  // Arama sonuçları dışında bir yere tıklandığında sonuçları kapat
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -39,7 +30,6 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Arama yapıldığında sonuçları göster
   useEffect(() => {
     setIsSearchOpen(debouncedSearch.length > 2 && (searchResults?.length ?? 0) > 0);
   }, [debouncedSearch, searchResults]);
@@ -51,37 +41,21 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <Link href="/">
-          <div className="mr-8 flex items-center space-x-2 cursor-pointer">
-            <span className="hidden font-bold sm:inline-block">Blog</span>
-          </div>
-        </Link>
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex-1 flex justify-start">
+          {/* Boş alan */}
+        </div>
 
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Kategoriler</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="grid gap-3 p-6 w-[400px]">
-                  <Link href="/category/teknoloji">
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                      Teknoloji
-                    </NavigationMenuLink>
-                  </Link>
-                  <Link href="/category/yazilim">
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                      Yazılım
-                    </NavigationMenuLink>
-                  </Link>
-                </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+        <div className="flex-1 flex justify-center">
+          <Link href="/">
+            <div className="flex items-center space-x-2 cursor-pointer">
+              <span className="text-xl font-bold">Blog</span>
+            </div>
+          </Link>
+        </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="relative w-full max-w-sm" ref={searchRef}>
+        <div className="flex-1 flex justify-end">
+          <div className="relative w-64" ref={searchRef}>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="İçeriklerde ara..."
