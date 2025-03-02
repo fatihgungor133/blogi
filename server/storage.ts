@@ -9,12 +9,12 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   async getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}> {
     try {
-      const [rows] = await pool.execute<any>(
+      const [rows] = await pool.query(
         'SELECT id, baslik_id, content FROM icerik LIMIT ?, ?',
         [(page - 1) * limit, limit]
       );
 
-      const [totalRows] = await pool.execute<any>('SELECT COUNT(*) as total FROM icerik');
+      const [totalRows] = await pool.query('SELECT COUNT(*) as total FROM icerik');
       const total = totalRows[0].total;
 
       return {
@@ -29,7 +29,7 @@ export class DatabaseStorage implements IStorage {
 
   async getContent(titleId: number): Promise<Content | undefined> {
     try {
-      const [rows] = await pool.execute<any>(
+      const [rows] = await pool.query(
         'SELECT id, baslik_id, content FROM icerik WHERE baslik_id = ?',
         [titleId]
       );
