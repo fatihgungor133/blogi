@@ -1,31 +1,28 @@
 import { pool } from './db';
-import type { Title, Content } from '@shared/schema';
+import type { Content } from '@shared/schema';
 
 export interface IStorage {
-  getTitles(page: number, limit: number): Promise<{titles: Title[], total: number}>;
+  getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}>;
   getContent(titleId: number): Promise<Content | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTitles(page: number, limit: number): Promise<{titles: Title[], total: number}> {
-    const offset = (page - 1) * limit;
-
+  async getTitles(page: number, limit: number): Promise<{titles: Content[], total: number}> {
     try {
-      // Use prepared statement for better security
       const [rows] = await pool.execute<any>(
-        'SELECT SQL_CALC_FOUND_ROWS id, title FROM baslik LIMIT ? OFFSET ?',
-        [limit, offset]
+        'SELECT id, baslik_id, content FROM icerik LIMIT ?, ?',
+        [(page - 1) * limit, limit]
       );
 
-      const [totalRows] = await pool.execute<any>('SELECT FOUND_ROWS() as total');
+      const [totalRows] = await pool.execute<any>('SELECT COUNT(*) as total FROM icerik');
       const total = totalRows[0].total;
 
       return {
-        titles: rows as Title[],
+        titles: rows as Content[],
         total: total as number
       };
     } catch (error) {
-      console.error('Error fetching titles:', error);
+      console.error('Error fetching content:', error);
       throw error;
     }
   }

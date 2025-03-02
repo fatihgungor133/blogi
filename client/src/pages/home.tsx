@@ -2,20 +2,20 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import type { Title } from "@shared/schema";
+import type { Content } from "@shared/schema";
 
 export default function Home() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const { data, isLoading, error } = useQuery<{titles: Title[], total: number}>({
+  const { data, isLoading, error } = useQuery<{titles: Content[], total: number}>({
     queryKey: ['/api/titles', page, limit],
     queryFn: () => 
       fetch(`/api/titles?page=${page}&limit=${limit}`).then(res => {
         if (!res.ok) {
-          throw new Error('Failed to fetch titles');
+          throw new Error('Failed to fetch content');
         }
         return res.json();
       })
@@ -38,7 +38,7 @@ export default function Home() {
       <div className="container mx-auto p-4">
         <Card className="bg-destructive/10">
           <CardHeader>
-            <CardTitle>Error loading posts</CardTitle>
+            <CardTitle>Error loading content</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -55,12 +55,15 @@ export default function Home() {
       </h1>
 
       <div className="grid gap-4">
-        {titles.map((title) => (
-          <Link key={title.id} href={`/post/${title.id}`}>
+        {titles.map((content) => (
+          <Link key={content.id} href={`/post/${content.baslik_id}`}>
             <Card className="hover:bg-accent transition-colors cursor-pointer">
               <CardHeader>
-                <CardTitle>{title.title}</CardTitle>
+                <CardTitle>İçerik #{content.id}</CardTitle>
               </CardHeader>
+              <CardContent className="line-clamp-3">
+                {content.content}
+              </CardContent>
             </Card>
           </Link>
         ))}
