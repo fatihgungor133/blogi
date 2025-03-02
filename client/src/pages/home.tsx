@@ -4,6 +4,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Seo } from "@/components/Seo";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import type { Content } from "@shared/schema";
 
 export default function Home() {
@@ -53,6 +55,13 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4">
+      <Seo 
+        title="Blog Posts"
+        description="Güncel blog yazıları ve içerikler"
+      />
+
+      <Breadcrumb items={[{ label: "Blog Posts" }]} />
+
       <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
         Blog Posts
       </h1>
