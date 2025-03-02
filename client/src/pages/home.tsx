@@ -55,7 +55,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4">
       <Seo 
-        title="Blog Yazıları"
+        title="Ana Sayfa"
         description="Güncel blog yazıları ve içerikler"
         type="website"
       />

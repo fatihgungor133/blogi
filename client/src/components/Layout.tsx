@@ -21,9 +21,9 @@ export function Layout({ children, title, description }: LayoutProps) {
     queryFn: () => fetch('/api/site/footer').then(res => res.json())
   });
 
-  const pageTitle = title 
-    ? `${title} | ${siteSettings?.siteName || 'Blog'}`
-    : siteSettings?.siteName || 'Blog';
+  // Title oluşturma mantığını güncelledik
+  const siteName = siteSettings?.siteName || 'Blog';
+  const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -31,7 +31,7 @@ export function Layout({ children, title, description }: LayoutProps) {
         title={pageTitle}
         description={description || siteSettings?.metaDescription || 'Blog içeriklerini keşfedin'}
       />
-      <Header siteName={siteSettings?.siteName} />
+      <Header siteName={siteName} />
       <main className="flex-grow">
         {children}
       </main>
