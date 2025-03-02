@@ -11,24 +11,31 @@ interface LayoutProps {
 }
 
 export function Layout({ children, title, description }: LayoutProps) {
-  const { data: siteSettings } = useQuery<SiteSettings>({
+  const { data: siteSettings, isLoading } = useQuery<SiteSettings>({
     queryKey: ['/api/site/settings'],
-    queryFn: () => fetch('/api/site/settings').then(res => res.json())
+    queryFn: () => fetch('/api/site/settings').then(res => {
+      if (!res.ok) throw new Error('Site ayarları yüklenemedi');
+      return res.json();
+    })
   });
 
   const { data: footerSettings } = useQuery<FooterSettings>({
-    queryKey: ['/api/site/footer'],
-    queryFn: () => fetch('/api/site/footer').then(res => res.json())
+    queryKey: ['/api/site/footer']
   });
 
+  if (isLoading) {
+    return <div>Yükleniyor...</div>;
+  }
+
   const siteName = siteSettings?.siteName || '';
+  const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
     <div className="min-h-screen flex flex-col">
       {siteSettings && (
         <Seo 
-          title={title ? `${title} | ${siteName}` : siteName}
-          description={description || siteSettings.metaDescription || 'Blog içeriklerini keşfedin'}
+          title={pageTitle}
+          description={description || siteSettings.metaDescription || ''}
           type="website"
         />
       )}
