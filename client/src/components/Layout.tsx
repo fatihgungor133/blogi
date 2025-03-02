@@ -30,6 +30,9 @@ export function Layout({ children, title, description }: LayoutProps) {
   const siteName = siteSettings?.siteName || '';
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
+  console.log('Current site settings:', siteSettings);
+  console.log('Current page title:', pageTitle);
+
   return (
     <div className="min-h-screen flex flex-col">
       {siteSettings && (

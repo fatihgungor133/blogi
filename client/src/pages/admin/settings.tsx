@@ -13,11 +13,11 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: siteSettings } = useQuery<SiteSettings>({
+  const { data: siteSettings, isLoading: siteLoading } = useQuery<SiteSettings>({
     queryKey: ['/api/admin/settings/site'],
   });
 
-  const { data: footerSettings } = useQuery<FooterSettings>({
+  const { data: footerSettings, isLoading: footerLoading } = useQuery<FooterSettings>({
     queryKey: ['/api/admin/settings/footer'],
   });
 
@@ -41,6 +41,7 @@ export default function AdminSettings() {
 
       toast({ description: "Site ayarları güncellendi" });
     } catch (error) {
+      console.error('Site settings update error:', error);
       toast({ variant: "destructive", description: "Bir hata oluştu" });
     }
   };
@@ -54,6 +55,10 @@ export default function AdminSettings() {
       toast({ variant: "destructive", description: "Bir hata oluştu" });
     }
   };
+
+  if (siteLoading || footerLoading) {
+    return <div>Yükleniyor...</div>;
+  }
 
   return (
     <div className="space-y-6">

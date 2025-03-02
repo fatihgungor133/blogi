@@ -132,8 +132,10 @@ export async function registerRoutes(app: Express) {
     try {
       console.log('Session in site settings:', req.session);
       const settings = await storage.getSiteSettings();
+      console.log('Retrieved site settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in /api/admin/settings/site:', error);
       res.status(500).json({ error: 'Site ayarları yüklenirken hata oluştu' });
     }
   });
@@ -141,9 +143,12 @@ export async function registerRoutes(app: Express) {
   app.patch('/api/admin/settings/site', requireAuth, async (req, res) => {
     try {
       console.log('Session in update site settings:', req.session);
+      console.log('Updating site settings with:', req.body);
       const settings = await storage.updateSiteSettings(req.body);
+      console.log('Updated site settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in PATCH /api/admin/settings/site:', error);
       res.status(500).json({ error: 'Site ayarları güncellenirken hata oluştu' });
     }
   });
@@ -170,8 +175,10 @@ export async function registerRoutes(app: Express) {
   app.get('/api/site/settings', async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
+      console.log('Public site settings:', settings);
       res.json(settings);
     } catch (error) {
+      console.error('Error in /api/site/settings:', error);
       res.status(500).json({ error: 'Site ayarları yüklenirken hata oluştu' });
     }
   });
