@@ -19,3 +19,24 @@ export function createSlug(title: string): string {
     .replace(/-+/g, '-')
     .trim();
 }
+
+export function parseHeadings(content: string): { id: string; text: string }[] {
+  const headingRegex = /<h2[^>]*>(.*?)<\/h2>/g;
+  const headings: { id: string; text: string }[] = [];
+  let match;
+
+  while ((match = headingRegex.exec(content)) !== null) {
+    const text = match[1].replace(/<[^>]*>/g, ''); // Remove any nested HTML tags
+    const id = createSlug(text);
+    headings.push({ id, text });
+  }
+
+  return headings;
+}
+
+export function addHeadingIds(content: string): string {
+  return content.replace(
+    /<h2[^>]*>(.*?)<\/h2>/g,
+    (match, text) => `<h2 id="${createSlug(text.replace(/<[^>]*>/g, ''))}">${text}</h2>`
+  );
+}

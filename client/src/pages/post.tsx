@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, List } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
 
 export default function Post() {
@@ -41,12 +42,30 @@ export default function Post() {
 
   const truncatedContent = content.content.substring(0, 160);
   const currentSlug = content.slug || `icerik-${content.id}`;
+  const contentWithIds = addHeadingIds(content.content);
+  const headings = parseHeadings(content.content);
 
   // Redirect if slug doesn't match
   if (slug !== currentSlug) {
     window.location.href = `/post/${content.baslik_id}/${currentSlug}`;
     return null;
   }
+
+  // Schema.org TableOfContents markup
+  const tableOfContentsSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`
+    },
+    "name": content.title || `İçerik #${content.id}`,
+    "hasPart": headings.map(heading => ({
+      "@type": "WebPageElement",
+      "name": heading.text,
+      "url": `${window.location.origin}/post/${content.baslik_id}/${currentSlug}#${heading.id}`
+    }))
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -61,6 +80,10 @@ export default function Post() {
           { position: 3, name: content.title || `İçerik #${content.id}`, item: `/post/${content.baslik_id}/${currentSlug}` }
         ]}
       />
+
+      <script type="application/ld+json">
+        {JSON.stringify(tableOfContentsSchema)}
+      </script>
 
       <Breadcrumb 
         items={[
@@ -80,9 +103,27 @@ export default function Post() {
           <h1 className="text-3xl font-bold mb-6">
             {content.title || `İçerik #${content.id}`}
           </h1>
-          <div className="prose prose-lg max-w-none">
-            {content.content}
-          </div>
+          <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: contentWithIds }} />
+
+          {headings.length > 0 && (
+            <div className="mt-8 border-t pt-6">
+              <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <List className="h-5 w-5" />
+                <h2>İçindekiler</h2>
+              </div>
+              <nav className="space-y-2">
+                {headings.map((heading, index) => (
+                  <a
+                    key={index}
+                    href={`#${heading.id}`}
+                    className="block text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {heading.text}
+                  </a>
+                ))}
+              </nav>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
