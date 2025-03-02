@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -10,7 +10,7 @@ import type { Content } from "@shared/schema";
 
 export default function Home() {
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 12; // Sayfa başına daha fazla içerik
 
   const { data, isLoading, error } = useQuery<{titles: Content[], total: number}>({
     queryKey: ['/api/titles', page, limit],
@@ -26,11 +26,10 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
-        <div className="grid gap-4">
-          {[...Array(5)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="h-20 bg-muted" />
-              <CardContent className="h-96 bg-muted mt-4" />
             </Card>
           ))}
         </div>
@@ -67,19 +66,16 @@ export default function Home() {
         Blog Posts
       </h1>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {titles.map((content) => (
           <Link 
             key={content.id} 
             href={`/post/${content.baslik_id}/${content.slug || `icerik-${content.id}`}`}
           >
-            <Card className="hover:bg-accent transition-colors cursor-pointer">
+            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
               <CardHeader>
                 <CardTitle>{content.title || `İçerik #${content.id}`}</CardTitle>
               </CardHeader>
-              <CardContent className="line-clamp-3">
-                {content.content}
-              </CardContent>
             </Card>
           </Link>
         ))}
