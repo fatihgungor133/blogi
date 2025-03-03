@@ -5,6 +5,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useQuery } from "@tanstack/react-query";
 import type { Content } from "@shared/schema";
 import { Search } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   siteName?: string;
@@ -61,7 +62,7 @@ export function Header({ siteName = 'Blog' }: HeaderProps) {
           </Link>
         </nav>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center space-x-4">
           <div className="relative w-64" ref={searchRef}>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -88,6 +89,7 @@ export function Header({ siteName = 'Blog' }: HeaderProps) {
               </div>
             )}
           </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>
