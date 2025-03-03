@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Content } from "@shared/schema";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   siteName?: string;
@@ -16,6 +17,7 @@ export function Header({ siteName = 'Blog' }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const isMobile = useIsMobile();
 
   const { data: searchResults } = useQuery<Content[]>({
     queryKey: ['/api/search', debouncedSearch],
@@ -63,33 +65,43 @@ export function Header({ siteName = 'Blog' }: HeaderProps) {
         </nav>
 
         <div className="ml-auto flex items-center space-x-4">
-          <div className="relative w-64" ref={searchRef}>
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="İçeriklerde ara..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-            {isSearchOpen && searchResults && searchResults.length > 0 && (
-              <div className="absolute top-full mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-                <div className="p-2">
-                  {searchResults.map((result) => (
-                    <Link
-                      key={result.id}
-                      href={`/post/${result.baslik_id}/${result.slug || `icerik-${result.id}`}`}
-                      onClick={handleSearchResultClick}
-                    >
-                      <div className="block rounded-sm px-2 py-1 hover:bg-accent cursor-pointer">
-                        {result.title || `İçerik #${result.id}`}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+          {!isMobile ? (
+            <>
+              <div className="relative w-64" ref={searchRef}>
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="İçeriklerde ara..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+                {isSearchOpen && searchResults && searchResults.length > 0 && (
+                  <div className="absolute top-full mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+                    <div className="p-2">
+                      {searchResults.map((result) => (
+                        <Link
+                          key={result.id}
+                          href={`/post/${result.baslik_id}/${result.slug || `icerik-${result.id}`}`}
+                          onClick={handleSearchResultClick}
+                        >
+                          <div className="block rounded-sm px-2 py-1 hover:bg-accent cursor-pointer">
+                            {result.title || `İçerik #${result.id}`}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <ThemeToggle />
+              <ThemeToggle />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center">
+                <ThemeToggle />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>
