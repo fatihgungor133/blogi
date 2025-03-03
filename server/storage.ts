@@ -8,6 +8,7 @@ export interface IStorage {
   searchContent(query: string): Promise<Content[]>;
   getPopularContent(): Promise<Content[]>;
   getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getAdminById(id: number): Promise<Admin | undefined>;
   getSiteSettings(): Promise<SiteSettings>;
   updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings>;
   getFooterSettings(): Promise<FooterSettings>;
@@ -110,6 +111,16 @@ export class DatabaseStorage implements IStorage {
       );
       console.log('Query result:', rows);
       return rows[0] as Admin | undefined;
+    } catch (error) {
+      console.error('Error fetching admin:', error);
+      throw error;
+    }
+  }
+
+  async getAdminById(id: number): Promise<Admin | undefined> {
+    try {
+      const [rows] = await pool.query('SELECT * FROM admins WHERE id = ?', [id]);
+      return rows[0] || null;
     } catch (error) {
       console.error('Error fetching admin:', error);
       throw error;

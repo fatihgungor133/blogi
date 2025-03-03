@@ -27,8 +27,12 @@ export async function registerRoutes(app: Express) {
       saveUninitialized: false,
       cookie: {
         secure: process.env.NODE_ENV === "production",
-        maxAge: 86400000 // 24 saat
-      }
+        maxAge: 86400000, // 24 saat
+        sameSite: 'lax', // CSRF koruması için
+        httpOnly: true, // JavaScript erişimini engeller
+        path: '/' // Tüm yollar için geçerli
+      },
+      name: 'blog_session' // Varsayılan connect.sid yerine özel isim
     })
   );
 
@@ -105,10 +109,28 @@ export async function registerRoutes(app: Express) {
         return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
       }
 
-      req.session.adminId = admin.id;
-      console.log('Session set, adminId:', admin.id);
-      await req.session.save(); // Force save session
-      res.json({ message: "Giriş başarılı" });
+      // Oturumu temizle ve yeni oturum oluştur
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          return res.status(500).json({ error: 'Oturum oluşturulurken hata oluştu' });
+        }
+        
+        // Oturum verilerini ayarla
+        req.session.adminId = admin.id;
+        console.log('Session set, adminId:', admin.id);
+        
+        // Oturumu kaydet
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ error: 'Oturum kaydedilirken hata oluştu' });
+          }
+          
+          // Başarılı yanıt gönder
+          res.json({ message: "Giriş başarılı" });
+        });
+      });
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ error: 'Giriş yapılırken hata oluştu' });
@@ -116,10 +138,32 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get('/api/admin/auth', async (req, res) => {
-    if (!req.session?.adminId) {
+    console.log('Auth check, session:', req.session);
+    console.log('Auth check, adminId:', req.session?.adminId);
+    
+    if (!req.session || !req.session.adminId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    res.json({ authenticated: true });
+    
+    try {
+      // Oturumdaki admin ID'sini doğrula
+      const admin = await storage.getAdminById(req.session.adminId);
+      
+      if (!admin) {
+        // Admin bulunamadıysa oturumu temizle
+        req.session.destroy((err) => {
+          if (err) console.error('Session destroy error:', err);
+        });
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Admin bilgilerini döndür (şifre hariç)
+      const { password, ...adminData } = admin;
+      res.json(adminData);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      res.status(500).json({ error: 'Kimlik doğrulama sırasında hata oluştu' });
+    }
   });
 
   app.post('/api/admin/logout', (req, res) => {
