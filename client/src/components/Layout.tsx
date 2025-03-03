@@ -3,7 +3,7 @@ import { Footer } from "./Footer";
 import { Seo } from "./Seo";
 import type { SiteSettings, FooterSettings } from "@shared/schema";
 import { useEffect, useState } from "react";
-import { apiRequest } from "../utils/apiRequest";
+import { apiRequest } from "@/lib/queryClient";
 
 interface LayoutProps {
   children: React.ReactNode;
