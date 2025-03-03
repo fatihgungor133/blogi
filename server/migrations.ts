@@ -1,7 +1,7 @@
 import { pool } from './db';
 import bcrypt from 'bcrypt';
 
-async function createTables() {
+export async function createTables() {
   try {
     // Admins tablosu - varsa bırak, yoksa oluştur
     await pool.query(`
@@ -70,30 +70,3 @@ createTables().catch(error => {
   console.error('Migration hatası:', error);
   process.exit(1);
 });
-
-export async function runMigrations(db: Database) {
-  try {
-    // Migrations tablosunu oluştur (eğer yoksa)
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Uygulanmış migrasyonları al
-    const appliedMigrations = await db.all('SELECT name FROM migrations');
-    const appliedMigrationNames = appliedMigrations.map(m => m.name);
-
-    // Henüz uygulanmamış migrasyonları bul ve uygula
-    for (const migration of migrations) {
-      if (!appliedMigrationNames.includes(migration.name)) {
-        await migration.up(db);
-        await db.run('INSERT INTO migrations (name) VALUES (?)', migration.name);
-      }
-    }
-  } catch (error) {
-    throw new Error(`Migrasyon çalıştırılırken hata oluştu: ${error}`);
-  }
-}

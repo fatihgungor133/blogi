@@ -1,9 +1,8 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import './migrations';
-import { createTables } from "./migrations";
-import cors from "cors";
 import path from "path";
 import fs from "fs";
 
@@ -55,48 +54,40 @@ app.use((req, res, next) => {
   next();
 });
 
-async function startServer() {
-  try {
-    // Veritabanı tablolarını oluştur
-    await createTables();
-
-    const app = express();
-    
-    // CORS ayarları
-    app.use(cors({
-      origin: '*', // Tüm originlere izin ver
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      credentials: true,
-      optionsSuccessStatus: 204,
-    }));
-
-    app.use(express.json());
-
-    // Statik dosyaları sunmak için public klasörünü ayarla
-    const publicDir = path.join(__dirname, 'public');
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-    app.use(express.static(publicDir));
-
-    const server = await registerRoutes(app);
-
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-      log(`Server running on port ${PORT}`);
-    });
-
-    // Geliştirme modunda Vite'ı kur
-    if (process.env.NODE_ENV === "development") {
-      await setupVite(app, server);
-    } else {
-      // Üretim modunda statik dosyaları sun
-      serveStatic(app);
-    }
-  } catch (error) {
-    console.error("Server başlatılırken hata oluştu:", error);
-    process.exit(1);
-  }
+// Statik dosyaları sunmak için public klasörünü ayarla
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
 }
+app.use(express.static(publicDir));
 
-startServer();
+(async () => {
+  const server = await registerRoutes(app);
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client
+  const port = process.env.PORT || 5000;
+  server.listen({
+    port,
+    host: "127.0.0.1",
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();
