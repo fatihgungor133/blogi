@@ -3,6 +3,8 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { Seo } from "./Seo";
 import type { SiteSettings, FooterSettings } from "@shared/schema";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../utils/apiRequest";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,15 +25,35 @@ export function Layout({ children, title, description }: LayoutProps) {
     queryKey: ['/api/site/footer']
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [footerSettings, setFooterSettings] = useState<FooterSettings | null>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const siteSettingsData = await apiRequest("GET", "/api/site/settings");
+        const footerSettingsData = await apiRequest("GET", "/api/site/footer");
+        setSiteSettings(siteSettingsData);
+        setFooterSettings(footerSettingsData);
+      } catch (error) {
+        // Hata durumunda varsayılan ayarları kullan
+        setSiteSettings(defaultSiteSettings);
+        setFooterSettings(defaultFooterSettings);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   if (isLoading) {
     return <div>Yükleniyor...</div>;
   }
 
   const siteName = siteSettings?.siteName || '';
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
-
-  console.log('Current site settings:', siteSettings);
-  console.log('Current page title:', pageTitle);
 
   return (
     <div className="min-h-screen flex flex-col">

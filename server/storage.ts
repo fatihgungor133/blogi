@@ -104,13 +104,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminByUsername(username: string): Promise<Admin | undefined> {
     try {
-      console.log('Getting admin by username:', username);
-      const [rows] = await pool.query(
-        'SELECT * FROM admins WHERE username = ?',
-        [username]
-      );
-      console.log('Query result:', rows);
-      return rows[0] as Admin | undefined;
+      const [rows] = await pool.query('SELECT * FROM admins WHERE username = ?', [username]);
+      return rows[0] || null;
     } catch (error) {
       console.error('Error fetching admin:', error);
       throw error;
@@ -129,35 +124,39 @@ export class DatabaseStorage implements IStorage {
 
   async getSiteSettings(): Promise<SiteSettings> {
     try {
-      console.log('Fetching site settings');
       const [rows] = await pool.query('SELECT * FROM site_settings LIMIT 1');
-      console.log('Raw site settings from DB:', rows[0]);
-
-      if (!rows[0]) {
-        console.log('No settings found, creating default settings');
-        const [result] = await pool.query(
-          'INSERT INTO site_settings (site_name, meta_description) VALUES (?, ?)',
-          ['Blog', 'Modern, çok dilli blog platformu']
-        );
-        const [inserted] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [result.insertId]);
-        console.log('Created default settings:', inserted[0]);
-
-        return {
-          id: inserted[0].id,
-          siteName: inserted[0].site_name,
-          metaDescription: inserted[0].meta_description,
-          updatedAt: inserted[0].updated_at
+      
+      if (rows.length === 0) {
+        // Varsayılan ayarları oluştur
+        const defaultSettings: SiteSettings = {
+          siteName: 'Blog İçerik Tarayıcısı',
+          siteDescription: 'Tüm blog içerikleriniz için tek adres',
+          logoUrl: '/logo.png',
+          faviconUrl: '/favicon.ico',
+          primaryColor: '#3490dc',
+          secondaryColor: '#ffed4a',
+          fontFamily: 'Roboto, sans-serif'
         };
+        
+        const [inserted] = await pool.query(
+          'INSERT INTO site_settings (site_name, site_description, logo_url, favicon_url, primary_color, secondary_color, font_family) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [defaultSettings.siteName, defaultSettings.siteDescription, defaultSettings.logoUrl, defaultSettings.faviconUrl, defaultSettings.primaryColor, defaultSettings.secondaryColor, defaultSettings.fontFamily]
+        );
+        
+        return defaultSettings;
       }
-
-      const settings = {
-        id: rows[0].id,
+      
+      // Veritabanı sütun adlarını JavaScript camelCase'e dönüştür
+      const settings: SiteSettings = {
         siteName: rows[0].site_name,
-        metaDescription: rows[0].meta_description,
-        updatedAt: rows[0].updated_at
+        siteDescription: rows[0].site_description,
+        logoUrl: rows[0].logo_url,
+        faviconUrl: rows[0].favicon_url,
+        primaryColor: rows[0].primary_color,
+        secondaryColor: rows[0].secondary_color,
+        fontFamily: rows[0].font_family
       };
-
-      console.log('Transformed site settings:', settings);
+      
       return settings;
     } catch (error) {
       console.error('Error fetching site settings:', error);
@@ -167,51 +166,86 @@ export class DatabaseStorage implements IStorage {
 
   async updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
     try {
-      console.log('Updating site settings with:', settings);
       const [existing] = await pool.query('SELECT * FROM site_settings LIMIT 1');
-      console.log('Existing settings:', existing[0]);
-
-      if (existing[0]) {
-        await pool.query(
-          'UPDATE site_settings SET site_name = ?, meta_description = ?, updated_at = NOW() WHERE id = ?',
-          [
-            settings.siteName || existing[0].site_name,
-            settings.metaDescription || existing[0].meta_description,
-            existing[0].id
-          ]
-        );
-
-        const [updated] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [existing[0].id]);
-        console.log('Raw updated settings from DB:', updated[0]);
-
-        const transformedSettings = {
-          id: updated[0].id,
-          siteName: updated[0].site_name,
-          metaDescription: updated[0].meta_description,
-          updatedAt: updated[0].updated_at
+      
+      if (existing.length === 0) {
+        // Ayarlar yoksa, yeni ayarlar oluştur
+        const newSettings: SiteSettings = {
+          siteName: settings.siteName || 'Blog İçerik Tarayıcısı',
+          siteDescription: settings.siteDescription || 'Tüm blog içerikleriniz için tek adres',
+          logoUrl: settings.logoUrl || '/logo.png',
+          faviconUrl: settings.faviconUrl || '/favicon.ico',
+          primaryColor: settings.primaryColor || '#3490dc',
+          secondaryColor: settings.secondaryColor || '#ffed4a',
+          fontFamily: settings.fontFamily || 'Roboto, sans-serif'
         };
-
-        console.log('Transformed updated settings:', transformedSettings);
-        return transformedSettings;
-      } else {
-        const [result] = await pool.query(
-          'INSERT INTO site_settings (site_name, meta_description) VALUES (?, ?)',
-          [settings.siteName, settings.metaDescription]
+        
+        const [inserted] = await pool.query(
+          'INSERT INTO site_settings (site_name, site_description, logo_url, favicon_url, primary_color, secondary_color, font_family) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [newSettings.siteName, newSettings.siteDescription, newSettings.logoUrl, newSettings.faviconUrl, newSettings.primaryColor, newSettings.secondaryColor, newSettings.fontFamily]
         );
-
-        const [inserted] = await pool.query('SELECT * FROM site_settings WHERE id = ?', [result.insertId]);
-        console.log('Raw inserted settings from DB:', inserted[0]);
-
-        const transformedSettings = {
-          id: inserted[0].id,
-          siteName: inserted[0].site_name,
-          metaDescription: inserted[0].meta_description,
-          updatedAt: inserted[0].updated_at
+        
+        const transformedSettings: SiteSettings = {
+          siteName: newSettings.siteName,
+          siteDescription: newSettings.siteDescription,
+          logoUrl: newSettings.logoUrl,
+          faviconUrl: newSettings.faviconUrl,
+          primaryColor: newSettings.primaryColor,
+          secondaryColor: newSettings.secondaryColor,
+          fontFamily: newSettings.fontFamily
         };
-
-        console.log('Transformed inserted settings:', transformedSettings);
+        
         return transformedSettings;
       }
+      
+      // Mevcut ayarları güncelle
+      const updateFields = [];
+      const updateValues = [];
+      
+      if (settings.siteName !== undefined) {
+        updateFields.push('site_name = ?');
+        updateValues.push(settings.siteName);
+      }
+      
+      if (settings.siteDescription !== undefined) {
+        updateFields.push('site_description = ?');
+        updateValues.push(settings.siteDescription);
+      }
+      
+      if (settings.logoUrl !== undefined) {
+        updateFields.push('logo_url = ?');
+        updateValues.push(settings.logoUrl);
+      }
+      
+      if (settings.faviconUrl !== undefined) {
+        updateFields.push('favicon_url = ?');
+        updateValues.push(settings.faviconUrl);
+      }
+      
+      if (settings.primaryColor !== undefined) {
+        updateFields.push('primary_color = ?');
+        updateValues.push(settings.primaryColor);
+      }
+      
+      if (settings.secondaryColor !== undefined) {
+        updateFields.push('secondary_color = ?');
+        updateValues.push(settings.secondaryColor);
+      }
+      
+      if (settings.fontFamily !== undefined) {
+        updateFields.push('font_family = ?');
+        updateValues.push(settings.fontFamily);
+      }
+      
+      if (updateFields.length > 0) {
+        const [updated] = await pool.query(
+          `UPDATE site_settings SET ${updateFields.join(', ')}`,
+          updateValues
+        );
+      }
+      
+      // Güncellenmiş ayarları getir
+      return await this.getSiteSettings();
     } catch (error) {
       console.error('Error updating site settings:', error);
       throw error;
@@ -220,37 +254,45 @@ export class DatabaseStorage implements IStorage {
 
   async getFooterSettings(): Promise<FooterSettings> {
     try {
-      console.log('Fetching footer settings');
       const [rows] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
-      console.log('Raw footer settings from DB:', rows[0]);
-
-      if (!rows[0]) {
-        console.log('No footer settings found, creating default settings');
-        const [result] = await pool.query(
-          'INSERT INTO footer_settings (about_text, email, phone) VALUES (?, ?, ?)',
-          ['Modern ve SEO uyumlu blog platformu', 'info@example.com', '+90 212 123 45 67']
-        );
-        const [inserted] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [result.insertId]);
-        console.log('Created default footer settings:', inserted[0]);
-
-        return {
-          id: inserted[0].id,
-          aboutText: inserted[0].about_text,
-          email: inserted[0].email,
-          phone: inserted[0].phone,
-          updatedAt: inserted[0].updated_at
+      
+      if (rows.length === 0) {
+        // Varsayılan footer ayarlarını oluştur
+        const defaultSettings: FooterSettings = {
+          copyrightText: '© 2023 Blog İçerik Tarayıcısı. Tüm hakları saklıdır.',
+          showSocialLinks: true,
+          facebookUrl: 'https://facebook.com',
+          twitterUrl: 'https://twitter.com',
+          instagramUrl: 'https://instagram.com',
+          linkedinUrl: 'https://linkedin.com',
+          showContactInfo: true,
+          email: 'info@example.com',
+          phone: '+90 555 123 4567',
+          address: 'İstanbul, Türkiye'
         };
+        
+        const [inserted] = await pool.query(
+          'INSERT INTO footer_settings (copyright_text, show_social_links, facebook_url, twitter_url, instagram_url, linkedin_url, show_contact_info, email, phone, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [defaultSettings.copyrightText, defaultSettings.showSocialLinks, defaultSettings.facebookUrl, defaultSettings.twitterUrl, defaultSettings.instagramUrl, defaultSettings.linkedinUrl, defaultSettings.showContactInfo, defaultSettings.email, defaultSettings.phone, defaultSettings.address]
+        );
+        
+        return defaultSettings;
       }
-
-      const settings = {
-        id: rows[0].id,
-        aboutText: rows[0].about_text,
+      
+      // Veritabanı sütun adlarını JavaScript camelCase'e dönüştür
+      const settings: FooterSettings = {
+        copyrightText: rows[0].copyright_text,
+        showSocialLinks: Boolean(rows[0].show_social_links),
+        facebookUrl: rows[0].facebook_url,
+        twitterUrl: rows[0].twitter_url,
+        instagramUrl: rows[0].instagram_url,
+        linkedinUrl: rows[0].linkedin_url,
+        showContactInfo: Boolean(rows[0].show_contact_info),
         email: rows[0].email,
         phone: rows[0].phone,
-        updatedAt: rows[0].updated_at
+        address: rows[0].address
       };
-
-      console.log('Transformed footer settings:', settings);
+      
       return settings;
     } catch (error) {
       console.error('Error fetching footer settings:', error);
@@ -260,54 +302,107 @@ export class DatabaseStorage implements IStorage {
 
   async updateFooterSettings(settings: Partial<FooterSettings>): Promise<FooterSettings> {
     try {
-      console.log('Updating footer settings with:', settings);
       const [existing] = await pool.query('SELECT * FROM footer_settings LIMIT 1');
-      console.log('Existing footer settings:', existing[0]);
-
-      if (existing[0]) {
-        await pool.query(
-          'UPDATE footer_settings SET about_text = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?',
-          [
-            settings.aboutText || existing[0].about_text,
-            settings.email || existing[0].email,
-            settings.phone || existing[0].phone,
-            existing[0].id
-          ]
-        );
-
-        const [updated] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [existing[0].id]);
-        console.log('Raw updated footer settings from DB:', updated[0]);
-
-        const transformedSettings = {
-          id: updated[0].id,
-          aboutText: updated[0].about_text,
-          email: updated[0].email,
-          phone: updated[0].phone,
-          updatedAt: updated[0].updated_at
+      
+      if (existing.length === 0) {
+        // Ayarlar yoksa, yeni ayarlar oluştur
+        const newSettings: FooterSettings = {
+          copyrightText: settings.copyrightText || '© 2023 Blog İçerik Tarayıcısı. Tüm hakları saklıdır.',
+          showSocialLinks: settings.showSocialLinks !== undefined ? settings.showSocialLinks : true,
+          facebookUrl: settings.facebookUrl || 'https://facebook.com',
+          twitterUrl: settings.twitterUrl || 'https://twitter.com',
+          instagramUrl: settings.instagramUrl || 'https://instagram.com',
+          linkedinUrl: settings.linkedinUrl || 'https://linkedin.com',
+          showContactInfo: settings.showContactInfo !== undefined ? settings.showContactInfo : true,
+          email: settings.email || 'info@example.com',
+          phone: settings.phone || '+90 555 123 4567',
+          address: settings.address || 'İstanbul, Türkiye'
         };
-
-        console.log('Transformed updated footer settings:', transformedSettings);
-        return transformedSettings;
-      } else {
-        const [result] = await pool.query(
-          'INSERT INTO footer_settings (about_text, email, phone) VALUES (?, ?, ?)',
-          [settings.aboutText, settings.email, settings.phone]
+        
+        const [inserted] = await pool.query(
+          'INSERT INTO footer_settings (copyright_text, show_social_links, facebook_url, twitter_url, instagram_url, linkedin_url, show_contact_info, email, phone, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [newSettings.copyrightText, newSettings.showSocialLinks, newSettings.facebookUrl, newSettings.twitterUrl, newSettings.instagramUrl, newSettings.linkedinUrl, newSettings.showContactInfo, newSettings.email, newSettings.phone, newSettings.address]
         );
-
-        const [inserted] = await pool.query('SELECT * FROM footer_settings WHERE id = ?', [result.insertId]);
-        console.log('Raw inserted footer settings from DB:', inserted[0]);
-
-        const transformedSettings = {
-          id: inserted[0].id,
-          aboutText: inserted[0].about_text,
-          email: inserted[0].email,
-          phone: inserted[0].phone,
-          updatedAt: inserted[0].updated_at
+        
+        const transformedSettings: FooterSettings = {
+          copyrightText: newSettings.copyrightText,
+          showSocialLinks: newSettings.showSocialLinks,
+          facebookUrl: newSettings.facebookUrl,
+          twitterUrl: newSettings.twitterUrl,
+          instagramUrl: newSettings.instagramUrl,
+          linkedinUrl: newSettings.linkedinUrl,
+          showContactInfo: newSettings.showContactInfo,
+          email: newSettings.email,
+          phone: newSettings.phone,
+          address: newSettings.address
         };
-
-        console.log('Transformed inserted footer settings:', transformedSettings);
+        
         return transformedSettings;
       }
+      
+      // Mevcut ayarları güncelle
+      const updateFields = [];
+      const updateValues = [];
+      
+      if (settings.copyrightText !== undefined) {
+        updateFields.push('copyright_text = ?');
+        updateValues.push(settings.copyrightText);
+      }
+      
+      if (settings.showSocialLinks !== undefined) {
+        updateFields.push('show_social_links = ?');
+        updateValues.push(settings.showSocialLinks);
+      }
+      
+      if (settings.facebookUrl !== undefined) {
+        updateFields.push('facebook_url = ?');
+        updateValues.push(settings.facebookUrl);
+      }
+      
+      if (settings.twitterUrl !== undefined) {
+        updateFields.push('twitter_url = ?');
+        updateValues.push(settings.twitterUrl);
+      }
+      
+      if (settings.instagramUrl !== undefined) {
+        updateFields.push('instagram_url = ?');
+        updateValues.push(settings.instagramUrl);
+      }
+      
+      if (settings.linkedinUrl !== undefined) {
+        updateFields.push('linkedin_url = ?');
+        updateValues.push(settings.linkedinUrl);
+      }
+      
+      if (settings.showContactInfo !== undefined) {
+        updateFields.push('show_contact_info = ?');
+        updateValues.push(settings.showContactInfo);
+      }
+      
+      if (settings.email !== undefined) {
+        updateFields.push('email = ?');
+        updateValues.push(settings.email);
+      }
+      
+      if (settings.phone !== undefined) {
+        updateFields.push('phone = ?');
+        updateValues.push(settings.phone);
+      }
+      
+      if (settings.address !== undefined) {
+        updateFields.push('address = ?');
+        updateValues.push(settings.address);
+      }
+      
+      if (updateFields.length > 0) {
+        const [updated] = await pool.query(
+          `UPDATE footer_settings SET ${updateFields.join(', ')}`,
+          updateValues
+        );
+      }
+      
+      // Güncellenmiş ayarları getir
+      return await this.getFooterSettings();
     } catch (error) {
       console.error('Error updating footer settings:', error);
       throw error;

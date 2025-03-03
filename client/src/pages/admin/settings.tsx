@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { SiteSettings, FooterSettings } from "@shared/schema";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: siteSettings, isLoading: siteLoading } = useQuery<SiteSettings>({
     queryKey: ['/api/admin/settings/site'],
@@ -58,19 +59,25 @@ export default function AdminSettings() {
   }, [footerSettings, resetFooterForm]);
 
   const onSiteSubmit = async (data: any) => {
+    setIsSubmitting(true);
     try {
-      console.log('Submitting site settings:', data);
       await apiRequest("PATCH", "/api/admin/settings/site", data);
-
-      // Tüm ilgili queryleri invalidate et
       await queryClient.invalidateQueries({ 
         queryKey: [['/api/admin/settings/site'], ['/api/site/settings']]
       });
-
-      toast({ description: "Site ayarları güncellendi" });
+      toast({
+        title: "Başarılı",
+        description: "Site ayarları güncellendi.",
+        status: "success"
+      });
     } catch (error) {
-      console.error('Site settings update error:', error);
-      toast({ variant: "destructive", description: "Bir hata oluştu" });
+      toast({
+        title: "Hata",
+        description: "Site ayarları güncellenirken bir hata oluştu.",
+        status: "error"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

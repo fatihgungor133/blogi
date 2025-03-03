@@ -85,28 +85,21 @@ export async function registerRoutes(app: Express) {
   app.post('/api/admin/login', async (req, res) => {
     try {
       const { username, password } = req.body;
-      console.log('Login attempt for username:', username);
-
+      
       const admin = await storage.getAdminByUsername(username);
-      console.log('Found admin:', admin ? 'Yes' : 'No');
-
+      
       if (!admin) {
-        console.log('Admin not found');
         return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
       }
 
       const isPasswordValid = await bcrypt.compare(password, admin.password);
-      console.log('Password valid:', isPasswordValid);
-
+      
       if (!isPasswordValid) {
-        console.log('Invalid password');
         return res.status(401).json({ message: "Geçersiz kullanıcı adı veya şifre" });
       }
 
       // Basit oturum yönetimi
       req.session.adminId = admin.id;
-      console.log('Session set, adminId:', admin.id);
-      console.log('Session object:', req.session);
       
       res.json({ message: "Giriş başarılı" });
     } catch (error) {
@@ -117,11 +110,10 @@ export async function registerRoutes(app: Express) {
 
   // Test endpoint'i - oturum verilerini kontrol etmek için
   app.get('/api/admin/session-debug', async (req, res) => {
-    console.log('Session debug:', {
-      sessionID: req.sessionID,
-      session: req.session,
-      cookies: req.headers.cookie
-    });
+    // Bu endpoint'i production'da devre dışı bırakıyoruz
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ error: 'Not found' });
+    }
     
     res.json({
       sessionID: req.sessionID,
@@ -132,10 +124,6 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get('/api/admin/auth', async (req, res) => {
-    console.log('Auth check, session:', req.session);
-    console.log('Auth check, adminId:', req.session?.adminId);
-    console.log('Auth check, cookies:', req.headers.cookie);
-    
     if (!req.session || typeof req.session.adminId === 'undefined') {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -156,9 +144,7 @@ export async function registerRoutes(app: Express) {
   // Admin ayarları API rotaları
   app.get('/api/admin/settings/site', requireAuth, async (req, res) => {
     try {
-      console.log('Session in site settings:', req.session);
       const settings = await storage.getSiteSettings();
-      console.log('Retrieved site settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in /api/admin/settings/site:', error);
@@ -168,10 +154,7 @@ export async function registerRoutes(app: Express) {
 
   app.patch('/api/admin/settings/site', requireAuth, async (req, res) => {
     try {
-      console.log('Session in update site settings:', req.session);
-      console.log('Updating site settings with:', req.body);
       const settings = await storage.updateSiteSettings(req.body);
-      console.log('Updated site settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in PATCH /api/admin/settings/site:', error);
@@ -181,9 +164,7 @@ export async function registerRoutes(app: Express) {
 
   app.get('/api/admin/settings/footer', requireAuth, async (req, res) => {
     try {
-      console.log('Session in footer settings:', req.session);
       const settings = await storage.getFooterSettings();
-      console.log('Retrieved footer settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in /api/admin/settings/footer:', error);
@@ -193,10 +174,7 @@ export async function registerRoutes(app: Express) {
 
   app.patch('/api/admin/settings/footer', requireAuth, async (req, res) => {
     try {
-      console.log('Session in update footer settings:', req.session);
-      console.log('Updating footer settings with:', req.body);
       const settings = await storage.updateFooterSettings(req.body);
-      console.log('Updated footer settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in PATCH /api/admin/settings/footer:', error);
@@ -208,7 +186,6 @@ export async function registerRoutes(app: Express) {
   app.get('/api/site/settings', async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
-      console.log('Public site settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in /api/site/settings:', error);
@@ -219,7 +196,6 @@ export async function registerRoutes(app: Express) {
   app.get('/api/site/footer', async (req, res) => {
     try {
       const settings = await storage.getFooterSettings();
-      console.log('Public footer settings:', settings);
       res.json(settings);
     } catch (error) {
       console.error('Error in /api/site/footer:', error);
