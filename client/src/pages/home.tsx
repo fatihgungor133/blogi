@@ -61,8 +61,11 @@ export default function Home() {
       {siteSettings && (
         <Seo 
           title={siteSettings.siteName}
-          description={siteSettings.metaDescription || "Güncel blog yazıları ve içerikler"}
+          description={siteSettings.siteDescription || "Güncel blog yazıları ve içerikler"}
           type="website"
+          breadcrumb={[
+            { position: 1, name: "Ana Sayfa", item: `${window.location.origin}/` }
+          ]}
         />
       )}
 

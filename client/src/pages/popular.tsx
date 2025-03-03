@@ -38,6 +38,10 @@ export default function Popular() {
         title="Popüler İçerikler"
         description="En çok okunan blog yazıları"
         type="website"
+        breadcrumb={[
+          { position: 1, name: "Ana Sayfa", item: `${window.location.origin}/` },
+          { position: 2, name: "Popüler İçerikler", item: `${window.location.origin}/popular` }
+        ]}
       />
 
       <Breadcrumb items={[{ label: "Popüler İçerikler" }]} />

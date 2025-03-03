@@ -77,8 +77,8 @@ export default function Post() {
         type="article"
         canonicalUrl={currentUrl}
         breadcrumb={[
-          { position: 1, name: "Ana Sayfa", item: "/" },
-          { position: 2, name: "Blog Yazıları", item: "/" },
+          { position: 1, name: "Ana Sayfa", item: `${window.location.origin}/` },
+          { position: 2, name: "Blog Yazıları", item: `${window.location.origin}/` },
           { position: 3, name: content.title || `İçerik #${content.id}`, item: currentUrl }
         ]}
       />
