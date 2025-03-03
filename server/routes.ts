@@ -311,7 +311,9 @@ async function generateSitemaps() {
     // Tüm içerik ID'lerini al
     const allContent = await storage.getAllContentIds();
     const siteSettings = await storage.getSiteSettings();
-    const siteUrl = process.env.SITE_URL || 'https://localhost.tr';
+    
+    // Site URL'sini .env dosyasından veya varsayılan değerden al
+    const siteUrl = process.env.SITE_URL || 'https://www.localhost.tr';
     
     // Her sitemap için maksimum kayıt sayısı
     const MAX_URLS_PER_SITEMAP = 20000;
