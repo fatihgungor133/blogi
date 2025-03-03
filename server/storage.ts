@@ -13,6 +13,7 @@ export interface IStorage {
   updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings>;
   getFooterSettings(): Promise<FooterSettings>;
   updateFooterSettings(settings: Partial<FooterSettings>): Promise<FooterSettings>;
+  getAllContentIds(): Promise<{id: number, baslik_id: number, title: string | null}[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -405,6 +406,19 @@ export class DatabaseStorage implements IStorage {
       return await this.getFooterSettings();
     } catch (error) {
       console.error('Error updating footer settings:', error);
+      throw error;
+    }
+  }
+
+  async getAllContentIds(): Promise<{id: number, baslik_id: number, title: string | null}[]> {
+    try {
+      const [rows] = await pool.query(
+        'SELECT i.id, i.baslik_id, t.title FROM icerik i LEFT JOIN titles t ON i.baslik_id = t.id ORDER BY i.id'
+      );
+      
+      return rows as {id: number, baslik_id: number, title: string | null}[];
+    } catch (error) {
+      console.error('Error fetching all content IDs:', error);
       throw error;
     }
   }

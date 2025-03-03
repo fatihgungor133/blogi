@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, LogOut, Key } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Settings, LogOut, Key, Map } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,7 @@ export default function AdminDashboard() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -20,123 +22,159 @@ export default function AdminDashboard() {
       setLocation("/admin/login");
     } catch (error) {
       console.error("Çıkış yapılırken hata oluştu:", error);
+      toast({
+        title: "Hata",
+        description: "Çıkış yapılırken bir hata oluştu.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
+    
+    if (!currentPassword || !newPassword) {
       toast({
-        variant: "destructive",
-        description: "Yeni şifre en az 6 karakter olmalıdır",
+        title: "Hata",
+        description: "Lütfen tüm alanları doldurun.",
+        variant: "destructive"
       });
       return;
     }
 
+    setIsChangingPassword(true);
     try {
-      setIsChangingPassword(true);
       await apiRequest("POST", "/api/admin/change-password", {
         currentPassword,
-        newPassword,
+        newPassword
       });
-
+      
       toast({
-        description: "Şifreniz başarıyla güncellendi",
+        title: "Başarılı",
+        description: "Şifreniz başarıyla değiştirildi."
       });
-
-      // Clear form
+      
       setCurrentPassword("");
       setNewPassword("");
     } catch (error) {
       toast({
-        variant: "destructive",
-        description: error instanceof Error ? error.message : "Şifre değiştirme sırasında bir hata oluştu",
+        title: "Hata",
+        description: "Şifre değiştirilirken bir hata oluştu.",
+        variant: "destructive"
       });
     } finally {
       setIsChangingPassword(false);
     }
   };
 
+  const handleGenerateSitemap = async () => {
+    setIsGeneratingSitemap(true);
+    try {
+      await apiRequest("POST", "/api/admin/generate-sitemap", {});
+      toast({
+        title: "Başarılı",
+        description: "Sitemap başarıyla oluşturuldu."
+      });
+    } catch (error) {
+      console.error("Sitemap oluşturulurken hata oluştu:", error);
+      toast({
+        title: "Hata",
+        description: "Sitemap oluşturulurken bir hata oluştu.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingSitemap(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/admin/dashboard">
-                  <span className="text-xl font-bold cursor-pointer">Admin Panel</span>
-                </Link>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link href="/admin/settings">
-                  <Button variant="ghost" className="inline-flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Site Ayarları
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Button variant="ghost" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Çıkış Yap
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8">Admin Paneli</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Site Ayarları</CardTitle>
+            <CardDescription>Site görünümünü ve ayarlarını düzenleyin</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/admin/settings">
+              <Button className="w-full">
+                <Settings className="mr-2 h-4 w-4" /> Ayarları Düzenle
               </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Hoş Geldiniz</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Sol menüden site ayarlarını düzenleyebilirsiniz.
-            </p>
-          </CardContent>
+            </Link>
+          </CardFooter>
         </Card>
-
+        
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Şifre Değiştir
-            </CardTitle>
+            <CardTitle>Şifre Değiştir</CardTitle>
+            <CardDescription>Admin hesabınızın şifresini güncelleyin</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
+            <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="space-y-2">
-                <Input
-                  type="password"
-                  placeholder="Mevcut Şifre"
+                <Label htmlFor="currentPassword">Mevcut Şifre</Label>
+                <Input 
+                  id="currentPassword" 
+                  type="password" 
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Input
-                  type="password"
-                  placeholder="Yeni Şifre"
+                <Label htmlFor="newPassword">Yeni Şifre</Label>
+                <Input 
+                  id="newPassword" 
+                  type="password" 
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                 />
               </div>
-              <Button 
-                type="submit" 
-                disabled={isChangingPassword}
-                className="w-full"
-              >
-                {isChangingPassword ? "Şifre Değiştiriliyor..." : "Şifre Değiştir"}
+              <Button type="submit" className="w-full" disabled={isChangingPassword}>
+                <Key className="mr-2 h-4 w-4" /> {isChangingPassword ? "İşleniyor..." : "Şifreyi Değiştir"}
               </Button>
             </form>
           </CardContent>
         </Card>
-      </main>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sitemap Oluştur</CardTitle>
+            <CardDescription>Site için XML sitemap dosyalarını oluşturun</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Bu işlem, arama motorları için tüm içeriklerinizi içeren sitemap dosyalarını oluşturacaktır. 
+              Her sitemap dosyası en fazla 20.000 URL içerecek şekilde bölünecektir.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={handleGenerateSitemap} 
+              className="w-full" 
+              disabled={isGeneratingSitemap}
+            >
+              <Map className="mr-2 h-4 w-4" /> 
+              {isGeneratingSitemap ? "Oluşturuluyor..." : "Sitemap Oluştur"}
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Çıkış Yap</CardTitle>
+            <CardDescription>Admin oturumunuzu sonlandırın</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={handleLogout} variant="destructive" className="w-full">
+              <LogOut className="mr-2 h-4 w-4" /> Çıkış Yap
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
