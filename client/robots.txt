@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/admin/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://www.localhost.tr/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10 
