@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function createSlug(title: string): string {
-  // Satır atlama karakterlerini temizle
-  const cleanTitle = title.replace(/[\n\r]+/g, ' ');
+  // Satır atlama karakterlerini tamamen kaldır
+  const cleanTitle = title.replace(/[\n\r]+/g, '');
   
   return cleanTitle
     .toLowerCase()
