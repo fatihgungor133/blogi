@@ -14,7 +14,8 @@ export function createSlug(title: string): string {
     .replace(/ı/g, 'i')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
-    .replace(/[^a-z0-9\s\-\?]/g, '')
+    .replace(/\?/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
