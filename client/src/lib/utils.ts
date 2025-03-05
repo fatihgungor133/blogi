@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function createSlug(title: string): string {
-  return title
+  // Satır atlama karakterlerini temizle
+  const cleanTitle = title.replace(/[\n\r]+/g, ' ');
+  
+  return cleanTitle
     .toLowerCase()
     .replace(/ğ/g, 'g')
     .replace(/ü/g, 'u')
