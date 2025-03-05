@@ -51,11 +51,8 @@ export default function Post() {
   const headings = parseHeadings(content.content);
   const currentUrl = `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`;
 
-  // Normalize slugs by removing any trailing characters that might cause issues
-  const normalizedSlug = slug?.replace(/[-?]+$/, '');
-  const normalizedCurrentSlug = currentSlug.replace(/[-?]+$/, '');
-  
-  if (normalizedSlug !== normalizedCurrentSlug) {
+  // Redirect if slug doesn't match
+  if (slug !== currentSlug) {
     window.location.href = `/post/${content.baslik_id}/${currentSlug}`;
     return null;
   }

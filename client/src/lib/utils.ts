@@ -6,8 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function createSlug(title: string): string {
-  if (!title) return '';
-  
   return title
     .toLowerCase()
     .replace(/[\n\r]+/g, ' ')
@@ -17,12 +15,10 @@ export function createSlug(title: string): string {
     .replace(/ı/g, 'i')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
-    .replace(/\?/g, '')
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '')
-    .replace(/-+/g, '-');
+    .replace(/-+/g, '-')
+    .trim();
 }
 
 export function parseHeadings(content: string): { id: string; text: string }[] {
