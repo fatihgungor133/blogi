@@ -42,11 +42,7 @@ export default function Post() {
   }
 
   const truncatedContent = content.content.substring(0, 160);
-  
-  // Başlıkta satır atlama karakterleri varsa temizle
-  const cleanTitle = content.title ? content.title.replace(/[\n\r]+/g, ' ').trim() : null;
-  const currentSlug = cleanTitle ? createSlug(cleanTitle) : `icerik-${content.id}`;
-  
+  const currentSlug = content.slug || `icerik-${content.id}`;
   const contentWithIds = addHeadingIds(content.content);
   const headings = parseHeadings(content.content);
   const currentUrl = `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`;

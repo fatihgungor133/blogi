@@ -8,7 +8,6 @@ export function cn(...inputs: ClassValue[]) {
 export function createSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[\n\r]+/g, ' ')
     .replace(/ğ/g, 'g')
     .replace(/ü/g, 'u')
     .replace(/ş/g, 's')
