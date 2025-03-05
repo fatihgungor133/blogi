@@ -42,13 +42,20 @@ export default function Post() {
   }
 
   const truncatedContent = content.content.substring(0, 160);
-  const currentSlug = content.slug || `icerik-${content.id}`;
+  
+  // Başlıkta satır atlama karakterleri varsa temizle
+  const cleanTitle = content.title ? content.title.replace(/[\n\r]+/g, ' ').trim() : null;
+  const currentSlug = cleanTitle ? createSlug(cleanTitle) : `icerik-${content.id}`;
+  
   const contentWithIds = addHeadingIds(content.content);
   const headings = parseHeadings(content.content);
   const currentUrl = `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`;
 
-  // Redirect if slug doesn't match
-  if (slug !== currentSlug) {
+  // Normalize slugs by removing any trailing characters that might cause issues
+  const normalizedSlug = slug?.replace(/[-?]+$/, '');
+  const normalizedCurrentSlug = currentSlug.replace(/[-?]+$/, '');
+  
+  if (normalizedSlug !== normalizedCurrentSlug) {
     window.location.href = `/post/${content.baslik_id}/${currentSlug}`;
     return null;
   }
