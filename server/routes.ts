@@ -254,6 +254,23 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Robots.txt API
+  app.get('/robots.txt', (req, res) => {
+    const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /api/admin/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://www.localhost.tr/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10`;
+    
+    res.header('Content-Type', 'text/plain');
+    res.send(robotsTxt);
+  });
+
   // Sitemap API
   app.get('/sitemap.xml', async (req, res) => {
     try {

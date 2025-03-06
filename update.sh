@@ -1,16 +1,18 @@
 #!/bin/bash
 
-# Git'ten en son değişiklikleri çek
+# Git değişikliklerini çek
 git pull origin main
 
-# Bağımlılıkları güncelle
+# Bağımlılıkları yükle
 npm install
 
 # Uygulamayı derle
 npm run build
 
-# PM2 ile uygulamayı yeniden başlat
+# PM2 servisini yeniden başlat
 pm2 restart blog-app
 
-# Nginx'i yeniden başlat
-sudo systemctl restart nginx 
+# Nginx servisini yeniden başlat
+sudo systemctl restart nginx
+
+echo "Güncelleme tamamlandı!" 
