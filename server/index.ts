@@ -68,6 +68,27 @@ const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
+
+// Robots.txt dosyasını public klasörüne yaz
+const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /api/admin/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://www.localhost.tr/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10`;
+
+fs.writeFileSync(path.join(publicDir, 'robots.txt'), robotsTxt);
+
+// Robots.txt için özel endpoint
+app.get('/robots.txt', (req, res) => {
+  res.header('Content-Type', 'text/plain');
+  res.send(robotsTxt);
+});
+
 app.use(express.static(publicDir));
 
 (async () => {
