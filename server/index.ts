@@ -69,7 +69,8 @@ if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
-// Robots.txt dosyasını public klasörüne yaz
+// Robots.txt dosyasını oluştur
+const robotsTxtPath = path.join(publicDir, 'robots.txt');
 const robotsTxt = `User-agent: *
 Allow: /
 Disallow: /api/admin/
@@ -81,7 +82,13 @@ Sitemap: https://www.localhost.tr/sitemap.xml
 # Crawl-delay
 Crawl-delay: 10`;
 
-fs.writeFileSync(path.join(publicDir, 'robots.txt'), robotsTxt);
+// Robots.txt dosyasını oluştur
+try {
+  fs.writeFileSync(robotsTxtPath, robotsTxt);
+  console.log('Robots.txt dosyası oluşturuldu:', robotsTxtPath);
+} catch (error) {
+  console.error('Robots.txt dosyası oluşturulurken hata:', error);
+}
 
 // Robots.txt için özel endpoint
 app.get('/robots.txt', (req, res) => {
