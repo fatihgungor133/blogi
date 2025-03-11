@@ -24,6 +24,22 @@ Crawl-delay: 10`;
 // Ads.txt içeriği
 const adsTxt = `google.com, pub-6656219753705244, DIRECT, f08c47fec0942fa0`;
 
+// HTML dönüşüm eklentisi
+const htmlPlugin = () => {
+  return {
+    name: 'html-transform',
+    transformIndexHtml(html) {
+      return html.replace(
+        '</head>',
+        `<!-- Google AdSense -->
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6656219753705244"
+         crossorigin="anonymous"></script>
+        </head>`
+      );
+    }
+  };
+};
+
 // Robots.txt ve Ads.txt dosyalarını kopyalayan eklenti
 const copyConfigFiles = () => {
   return {
@@ -54,6 +70,7 @@ const copyConfigFiles = () => {
 
 export default defineConfig({
   plugins: [
+    htmlPlugin(),
     react(),
     runtimeErrorOverlay(),
     themePlugin(),
