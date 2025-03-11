@@ -1,21 +1,14 @@
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { Seo } from "./Seo";
-import { AdSenseLeaderboard, AdSenseRectangle } from "./AdSense";
 import type { SiteSettings, FooterSettings } from "@shared/schema";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
-
-// Google AdSense bilgileri
-const ADSENSE_CLIENT = "ca-pub-XXXXXXXXXXXXXXXX"; // Google AdSense Client ID'nizi buraya ekleyin
-const ADSENSE_SLOT_TOP = "XXXXXXXXXX"; // Üst reklam slotu
-const ADSENSE_SLOT_BOTTOM = "XXXXXXXXXX"; // Alt reklam slotu
 
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
-  hideAds?: boolean; // Reklamları gizleme seçeneği (admin sayfaları için)
 }
 
 // Varsayılan ayarlar
@@ -42,7 +35,7 @@ const defaultFooterSettings: FooterSettings = {
   address: 'İstanbul, Türkiye'
 };
 
-export function Layout({ children, title, description, hideAds = false }: LayoutProps) {
+export function Layout({ children, title, description }: LayoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [footerSettings, setFooterSettings] = useState<FooterSettings | null>(null);
@@ -80,7 +73,6 @@ export function Layout({ children, title, description, hideAds = false }: Layout
           title={pageTitle}
           description={description || siteSettings.siteDescription || ''}
           type="website"
-          hideAds={hideAds}
         />
       )}
       <Header siteName={siteName} />
