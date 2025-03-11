@@ -13,18 +13,42 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminSettings from "@/pages/admin/settings";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { useEffect, useState } from "react";
 
 function Router() {
+  // URL'yi kontrol ederek admin sayfalarını tespit ediyoruz
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
+  
+  useEffect(() => {
+    // URL'yi kontrol et
+    const checkIfAdminRoute = () => {
+      const pathname = window.location.pathname;
+      setIsAdminRoute(pathname.startsWith("/admin"));
+    };
+    
+    // Sayfa yüklendiğinde kontrol et
+    checkIfAdminRoute();
+    
+    // URL değişimlerini dinle
+    window.addEventListener("popstate", checkIfAdminRoute);
+    
+    return () => {
+      window.removeEventListener("popstate", checkIfAdminRoute);
+    };
+  }, []);
+  
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/post/:id/:slug" component={Post} />
-      <Route path="/popular" component={Popular} />
-      <Route path="/admin/login" component={AdminLogin} />
-      <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/settings" component={AdminSettings} />
-      <Route component={NotFound} />
-    </Switch>
+    <Layout hideAds={isAdminRoute}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/post/:id/:slug" component={Post} />
+        <Route path="/popular" component={Popular} />
+        <Route path="/admin/login" component={AdminLogin} />
+        <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
+        <ProtectedRoute path="/admin/settings" component={AdminSettings} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 
@@ -33,9 +57,7 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="blog-theme">
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <Layout>
-            <Router />
-          </Layout>
+          <Router />
           <Toaster />
         </QueryClientProvider>
       </HelmetProvider>

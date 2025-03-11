@@ -13,6 +13,7 @@ interface SeoProps {
     name: string;
     item: string;
   }>;
+  hideAds?: boolean; // Reklamları gizleme seçeneği (admin sayfaları için)
 }
 
 export function Seo({
@@ -23,7 +24,8 @@ export function Seo({
   imageUrl,
   publishedTime,
   modifiedTime,
-  breadcrumb
+  breadcrumb,
+  hideAds = false
 }: SeoProps) {
   const siteUrl = window.location.origin;
   const url = canonicalUrl || window.location.href;
@@ -33,6 +35,15 @@ export function Seo({
       <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
+
+      {/* Google AdSense Reklam Kodu - Eğer hideAds false ise göster */}
+      {!hideAds && (
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6656219753705244"
+          crossOrigin="anonymous"
+        />
+      )}
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
