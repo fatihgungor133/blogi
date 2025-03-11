@@ -13,7 +13,7 @@ interface SeoProps {
     name: string;
     item: string;
   }>;
-  hideAds?: boolean; // Reklamları gizleme seçeneği (admin sayfaları için)
+  hideAds?: boolean; // Artık kullanılmıyor, index.html'e taşındı
 }
 
 export function Seo({
@@ -36,14 +36,7 @@ export function Seo({
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
 
-      {/* Google AdSense Reklam Kodu - Eğer hideAds false ise göster */}
-      {!hideAds && (
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6656219753705244"
-          crossOrigin="anonymous"
-        />
-      )}
+      {/* Google AdSense kodu artık index.html'e taşındı */}
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />

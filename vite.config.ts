@@ -21,19 +21,32 @@ Sitemap: https://www.localhost.tr/sitemap.xml
 # Crawl-delay
 Crawl-delay: 10`;
 
-// Robots.txt dosyasını kopyalayan eklenti
-const copyRobotsTxt = () => {
+// Ads.txt içeriği
+const adsTxt = `google.com, pub-6656219753705244, DIRECT, f08c47fec0942fa0`;
+
+// Robots.txt ve Ads.txt dosyalarını kopyalayan eklenti
+const copyConfigFiles = () => {
   return {
-    name: 'copy-robots-txt',
+    name: 'copy-config-files',
     closeBundle: () => {
       const outDir = path.resolve(__dirname, "dist/public");
-      const robotsTxtPath = path.join(outDir, 'robots.txt');
       
+      // Robots.txt kopyala
+      const robotsTxtPath = path.join(outDir, 'robots.txt');
       try {
         fs.writeFileSync(robotsTxtPath, robotsTxt);
         console.log('Robots.txt dosyası derleme sonrası kopyalandı:', robotsTxtPath);
       } catch (error) {
         console.error('Robots.txt dosyası kopyalanırken hata:', error);
+      }
+      
+      // Ads.txt kopyala
+      const adsTxtPath = path.join(outDir, 'ads.txt');
+      try {
+        fs.writeFileSync(adsTxtPath, adsTxt);
+        console.log('Ads.txt dosyası derleme sonrası kopyalandı:', adsTxtPath);
+      } catch (error) {
+        console.error('Ads.txt dosyası kopyalanırken hata:', error);
       }
     }
   };
@@ -44,7 +57,7 @@ export default defineConfig({
     react(),
     runtimeErrorOverlay(),
     themePlugin(),
-    copyRobotsTxt(),
+    copyConfigFiles(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
