@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { requireAuth } from "./middleware/auth";
 import bcrypt from "bcrypt";
 import session from "express-session";
-import memorystore from "memorystore";
+import { createClient } from "redis";
+import connectRedis from "connect-redis";
 import { pool } from './db'; // Fixed import
 import fs from "fs";
 import path from "path";
@@ -16,7 +17,14 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const MemoryStore = memorystore(session);
+// Redis client ve session store oluşturma
+const RedisStore = connectRedis(session);
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.connect().catch(console.error);
 
 declare module "express-session" {
   interface SessionData {
@@ -25,14 +33,18 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express) {
-  // Session middleware - basitleştirilmiş yapılandırma
+  // Session middleware - Redis ile yapılandırma
   app.use(
     session({
+      store: new RedisStore({ 
+        client: redisClient,
+        prefix: "blog-session:",
+      }),
       secret: process.env.SESSION_SECRET || "gizli-anahtar",
-      resave: true,
+      resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: false, // HTTPS için true olmalı, ama test için false
+        secure: process.env.NODE_ENV === 'production', // Production'da true, development'ta false
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 24 saat
       }
