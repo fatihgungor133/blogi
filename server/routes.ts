@@ -5,7 +5,7 @@ import { requireAuth } from "./middleware/auth";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import { createClient } from "redis";
-import connectRedis from "connect-redis";
+// connect-redis entegrasyonunu kaldırıyoruz çünkü ESM modülüyle uyumlu değil
 import { pool } from './db'; // Fixed import
 import fs from "fs";
 import path from "path";
@@ -17,15 +17,8 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Redis client ve session store oluşturma
-const RedisStore = connectRedis(session);
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
-redisClient.connect().catch(console.error);
-
+// Geçici olarak memory store'a dönüyoruz
+// Redis entegrasyonunu daha sonra düzgün bir şekilde yapacağız
 declare module "express-session" {
   interface SessionData {
     adminId?: number;
@@ -33,13 +26,9 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express) {
-  // Session middleware - Redis ile yapılandırma
+  // Session middleware - basit bellek tabanlı
   app.use(
     session({
-      store: new RedisStore({ 
-        client: redisClient,
-        prefix: "blog-session:",
-      }),
       secret: process.env.SESSION_SECRET || "gizli-anahtar",
       resave: false,
       saveUninitialized: false,
