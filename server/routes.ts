@@ -68,6 +68,30 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Görüntüleme sayacı için ayrı endpoint
+  app.post('/api/content/:titleId/view', async (req, res) => {
+    try {
+      const titleId = parseInt(req.params.titleId);
+      
+      // IP adresine göre kısa süreli önbelleğe alma kontrolü
+      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const cacheKey = `view_${titleId}_${clientIp}`;
+      
+      // Bu endpoint önbelleklenemez olarak işaretleniyor
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Görüntüleme sayısını artır
+      await pool.query('UPDATE icerik SET views = views + 1 WHERE baslik_id = ?', [titleId]);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Görüntüleme sayacı hatası:', error);
+      res.status(500).json({ error: 'Görüntüleme sayısı güncellenirken hata oluştu' });
+    }
+  });
+
   app.get('/api/search', async (req, res) => {
     try {
       const query = req.query.q as string;

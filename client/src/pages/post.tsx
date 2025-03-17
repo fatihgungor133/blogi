@@ -8,6 +8,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
 import { ShareButtons } from "@/components/ShareButtons";
+import { useEffect } from "react";
 
 export default function Post() {
   const { id, slug } = useParams();
@@ -17,6 +18,28 @@ export default function Post() {
     queryFn: () => 
       fetch(`/api/content/${id}`).then(res => res.json())
   });
+  
+  // Görüntüleme sayısını artırmak için
+  useEffect(() => {
+    if (content && id) {
+      // Sayfa yüklendiğinde görüntüleme sayısını artır
+      const incrementView = async () => {
+        try {
+          await fetch(`/api/content/${id}/view`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
+          });
+        } catch (error) {
+          console.error('Görüntüleme sayacı hatası:', error);
+        }
+      };
+      
+      incrementView();
+    }
+  }, [content, id]);
 
   if (isLoading) {
     return (
