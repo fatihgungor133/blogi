@@ -14,7 +14,7 @@ interface LayoutProps {
 // Varsayılan ayarlar
 const defaultSiteSettings: SiteSettings = {
   siteName: 'Blog İçerik Tarayıcısı',
-  siteDescription: 'Tüm blog içerikleriniz için tek adres',
+  metaDescription: 'Tüm blog içerikleriniz için tek adres',
   logoUrl: '/logo.png',
   faviconUrl: '/favicon.ico',
   primaryColor: '#3490dc',
@@ -23,7 +23,7 @@ const defaultSiteSettings: SiteSettings = {
 };
 
 const defaultFooterSettings: FooterSettings = {
-  copyrightText: '© 2023 Blog İçerik Tarayıcısı. Tüm hakları saklıdır.',
+  copyright: '© 2023 Blog İçerik Tarayıcısı. Tüm hakları saklıdır.',
   showSocialLinks: true,
   facebookUrl: 'https://facebook.com',
   twitterUrl: 'https://twitter.com',
@@ -49,8 +49,15 @@ export function Layout({ children, title, description }: LayoutProps) {
         const siteSettingsData = await siteSettingsResponse.json();
         const footerSettingsData = await footerSettingsResponse.json();
         
-        setSiteSettings(siteSettingsData);
-        setFooterSettings(footerSettingsData);
+        // Site ayarları boş veya geçersizse varsayılan değerleri kullan
+        if (!siteSettingsData || !siteSettingsData.siteName) {
+          console.warn("Site ayarları boş veya eksik, varsayılan değerler kullanılıyor");
+          setSiteSettings(defaultSiteSettings);
+        } else {
+          setSiteSettings(siteSettingsData);
+        }
+        
+        setFooterSettings(footerSettingsData || defaultFooterSettings);
         
         console.log("Site Ayarları:", siteSettingsData);
       } catch (error) {
@@ -70,7 +77,8 @@ export function Layout({ children, title, description }: LayoutProps) {
     return <div>Yükleniyor...</div>;
   }
 
-  const siteName = siteSettings?.siteName || '';
+  // Varsayılan değeri doğrudan belirtin
+  const siteName = siteSettings?.siteName || 'Blog İçerik Tarayıcısı';
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
@@ -78,7 +86,7 @@ export function Layout({ children, title, description }: LayoutProps) {
       {siteSettings && (
         <Seo 
           title={pageTitle}
-          description={description || siteSettings.siteDescription || ''}
+          description={description || siteSettings.metaDescription || ''}
           type="website"
         />
       )}
@@ -86,7 +94,7 @@ export function Layout({ children, title, description }: LayoutProps) {
       <main className="flex-grow">
         {children}
       </main>
-      <Footer settings={footerSettings} />
+      <Footer settings={footerSettings || defaultFooterSettings} />
     </div>
   );
 }

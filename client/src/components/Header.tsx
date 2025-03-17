@@ -12,7 +12,11 @@ interface HeaderProps {
   siteName?: string;
 }
 
-export function Header({ siteName = 'Blog' }: HeaderProps) {
+export function Header({ siteName = 'Blog İçerik Tarayıcısı' }: HeaderProps) {
+  const displaySiteName = siteName && siteName.trim() !== '' 
+    ? siteName 
+    : 'Blog İçerik Tarayıcısı';
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -51,7 +55,7 @@ export function Header({ siteName = 'Blog' }: HeaderProps) {
       <div className="max-w-screen-xl mx-auto px-4 flex h-16 items-center">
         <Link href="/">
           <div className="flex items-center space-x-2 cursor-pointer">
-            <span className="text-xl font-bold">{siteName}</span>
+            <span className="text-xl font-bold text-primary">{displaySiteName}</span>
           </div>
         </Link>
 
