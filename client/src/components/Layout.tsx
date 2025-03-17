@@ -43,11 +43,18 @@ export function Layout({ children, title, description }: LayoutProps) {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const siteSettingsData = await apiRequest("GET", "/api/site/settings");
-        const footerSettingsData = await apiRequest("GET", "/api/site/footer");
+        const siteSettingsResponse = await apiRequest("GET", "/api/site/settings");
+        const footerSettingsResponse = await apiRequest("GET", "/api/site/footer");
+        
+        const siteSettingsData = await siteSettingsResponse.json();
+        const footerSettingsData = await footerSettingsResponse.json();
+        
         setSiteSettings(siteSettingsData);
         setFooterSettings(footerSettingsData);
+        
+        console.log("Site Ayarları:", siteSettingsData);
       } catch (error) {
+        console.error("Ayarlar yüklenirken hata:", error);
         // Hata durumunda varsayılan ayarları kullan
         setSiteSettings(defaultSiteSettings);
         setFooterSettings(defaultFooterSettings);
