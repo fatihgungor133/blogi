@@ -17,6 +17,11 @@ export function Header({ siteName = 'Blog İçerik Tarayıcısı' }: HeaderProps
     ? siteName 
     : 'Blog İçerik Tarayıcısı';
   
+  // Debug için console'a yazdır
+  useEffect(() => {
+    console.log("Header - Site Adı:", displaySiteName);
+  }, [displaySiteName]);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -55,7 +60,7 @@ export function Header({ siteName = 'Blog İçerik Tarayıcısı' }: HeaderProps
       <div className="max-w-screen-xl mx-auto px-4 flex h-16 items-center">
         <Link href="/">
           <div className="flex items-center space-x-2 cursor-pointer">
-            <span className="text-xl font-bold text-primary">{displaySiteName}</span>
+            <span className="text-xl font-bold text-primary inline-block px-2 py-1" style={{ color: '#3490dc' }}>{displaySiteName}</span>
           </div>
         </Link>
 
