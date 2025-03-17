@@ -8,7 +8,6 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
 import { ShareButtons } from "@/components/ShareButtons";
-import { useEffect } from "react";
 
 export default function Post() {
   const { id, slug } = useParams();
@@ -16,31 +15,16 @@ export default function Post() {
   const { data: content, isLoading } = useQuery<Content>({
     queryKey: ['/api/content', id],
     queryFn: () => 
-      fetch(`/api/content/${id}`).then(res => res.json())
+      fetch(`/api/content/${id}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }).then(res => res.json()),
+    staleTime: 0
   });
   
-  // Görüntüleme sayısını artırmak için
-  useEffect(() => {
-    if (content && id) {
-      // Sayfa yüklendiğinde görüntüleme sayısını artır
-      const incrementView = async () => {
-        try {
-          await fetch(`/api/content/${id}/view`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
-            }
-          });
-        } catch (error) {
-          console.error('Görüntüleme sayacı hatası:', error);
-        }
-      };
-      
-      incrementView();
-    }
-  }, [content, id]);
-
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">

@@ -61,34 +61,26 @@ export async function registerRoutes(app: Express) {
       if (!content) {
         return res.status(404).json({ error: 'İçerik bulunamadı' });
       }
-
-      res.json(content);
-    } catch (error) {
-      res.status(500).json({ error: 'İçerik yüklenirken hata oluştu' });
-    }
-  });
-
-  // Görüntüleme sayacı için ayrı endpoint
-  app.post('/api/content/:titleId/view', async (req, res) => {
-    try {
-      const titleId = parseInt(req.params.titleId);
       
-      // IP adresine göre kısa süreli önbelleğe alma kontrolü
-      const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      const cacheKey = `view_${titleId}_${clientIp}`;
+      // Görüntüleme sayısını otomatik olarak artır
+      // Her istek geldiğinde content tablosunda views değerini bir artır
+      try {
+        await pool.query('UPDATE icerik SET views = views + 1 WHERE baslik_id = ?', [titleId]);
+        // İçerik nesnesindeki views değerini de güncelle ki doğru sayı dönsün
+        content.views = (content.views || 0) + 1;
+      } catch (updateError) {
+        console.error('Görüntüleme sayısı güncellenirken hata:', updateError);
+        // Hata olsa bile içeriği göstermeye devam et
+      }
       
-      // Bu endpoint önbelleklenemez olarak işaretleniyor
+      // Önbelleğe almayı önle
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      // Görüntüleme sayısını artır
-      await pool.query('UPDATE icerik SET views = views + 1 WHERE baslik_id = ?', [titleId]);
-      
-      res.json({ success: true });
+      res.json(content);
     } catch (error) {
-      console.error('Görüntüleme sayacı hatası:', error);
-      res.status(500).json({ error: 'Görüntüleme sayısı güncellenirken hata oluştu' });
+      res.status(500).json({ error: 'İçerik yüklenirken hata oluştu' });
     }
   });
 
