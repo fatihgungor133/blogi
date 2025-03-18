@@ -21,26 +21,17 @@ Sitemap: https://www.localhost.tr/sitemap.xml
 # Crawl-delay
 Crawl-delay: 10`;
 
-// Ads.txt içeriği
-const adsTxt = `google.com, pub-6656219753705244, DIRECT, f08c47fec0942fa0`;
-
 // HTML dönüşüm eklentisi
 const htmlPlugin = () => {
   return {
     name: 'html-transform',
-    transformIndexHtml(html) {
-      return html.replace(
-        '</head>',
-        `<!-- Google AdSense -->
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6656219753705244"
-         crossorigin="anonymous"></script>
-        </head>`
-      );
+    transformIndexHtml(html: string) {
+      return html;
     }
   };
 };
 
-// Robots.txt ve Ads.txt dosyalarını kopyalayan eklenti
+// Robots.txt dosyasını kopyalayan eklenti
 const copyConfigFiles = () => {
   return {
     name: 'copy-config-files',
@@ -54,15 +45,6 @@ const copyConfigFiles = () => {
         console.log('Robots.txt dosyası derleme sonrası kopyalandı:', robotsTxtPath);
       } catch (error) {
         console.error('Robots.txt dosyası kopyalanırken hata:', error);
-      }
-      
-      // Ads.txt kopyala
-      const adsTxtPath = path.join(outDir, 'ads.txt');
-      try {
-        fs.writeFileSync(adsTxtPath, adsTxt);
-        console.log('Ads.txt dosyası derleme sonrası kopyalandı:', adsTxtPath);
-      } catch (error) {
-        console.error('Ads.txt dosyası kopyalanırken hata:', error);
       }
     }
   };

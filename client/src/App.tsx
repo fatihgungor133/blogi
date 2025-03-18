@@ -8,7 +8,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { LoadingFallback } from '@/components/LoadingFallback';
-import { useEffect, useState } from "react";
 
 // Lazy loaded components
 const Home = lazy(() => import('@/pages/home'));
@@ -21,29 +20,8 @@ const CLSDebug = lazy(() => import('@/pages/test/cls-debug'));
 const NotFound = lazy(() => import('@/pages/not-found'));
 
 function Router() {
-  // URL'yi kontrol ederek admin sayfalarını tespit ediyoruz
-  const [isAdminRoute, setIsAdminRoute] = useState(false);
-  
-  useEffect(() => {
-    // URL'yi kontrol et
-    const checkIfAdminRoute = () => {
-      const pathname = window.location.pathname;
-      setIsAdminRoute(pathname.startsWith("/admin"));
-    };
-    
-    // Sayfa yüklendiğinde kontrol et
-    checkIfAdminRoute();
-    
-    // URL değişimlerini dinle
-    window.addEventListener("popstate", checkIfAdminRoute);
-    
-    return () => {
-      window.removeEventListener("popstate", checkIfAdminRoute);
-    };
-  }, []);
-  
   return (
-    <Layout hideAds={isAdminRoute}>
+    <Layout>
       <Suspense fallback={<LoadingFallback />}>
         <Switch>
           <Route path="/" component={Home} />

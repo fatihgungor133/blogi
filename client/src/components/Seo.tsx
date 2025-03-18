@@ -13,7 +13,6 @@ interface SeoProps {
     name: string;
     item: string;
   }>;
-  hideAds?: boolean; // Artık kullanılmıyor, index.html'e taşındı
 }
 
 export function Seo({
@@ -24,8 +23,7 @@ export function Seo({
   imageUrl,
   publishedTime,
   modifiedTime,
-  breadcrumb,
-  hideAds = false
+  breadcrumb
 }: SeoProps) {
   const siteUrl = window.location.origin;
   const url = canonicalUrl || window.location.href;
@@ -35,8 +33,6 @@ export function Seo({
       <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
-
-      {/* Google AdSense kodu artık index.html'e taşındı */}
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
