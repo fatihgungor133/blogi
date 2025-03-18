@@ -1,5 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useEffect, useState } from "react";
+import { useRoute, useParams, Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
+import { getPost, viewPost } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, List } from "lucide-react";
@@ -8,7 +15,6 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
 import { ShareButtons } from "@/components/ShareButtons";
-import { useEffect } from "react";
 
 // Görüntüleme kaydı için bir araç fonksiyonu
 async function recordView(id: string) {
@@ -29,8 +35,6 @@ async function recordView(id: string) {
     if (!response.ok) {
       throw new Error('Görüntüleme kaydedilemedi');
     }
-    
-    console.log('Görüntüleme başarıyla kaydedildi');
   } catch (error) {
     console.error('Görüntüleme kaydedilirken hata oluştu:', error);
   }
@@ -38,48 +42,73 @@ async function recordView(id: string) {
 
 export default function Post() {
   const { id, slug } = useParams();
+  const { theme } = useTheme();
+  const [hasViewed, setHasViewed] = useState(false);
 
-  const { data: content, isLoading } = useQuery<Content>({
-    queryKey: ['/api/content', id],
+  // ID parametresi string olarak gelir, sayıya çevirmemiz gerekiyor
+  const postId = id ? parseInt(id) : 0;
+
+  const { data: content, isLoading, error } = useQuery<Content>({
+    queryKey: ['/api/content', postId],
     queryFn: () => 
-      fetch(`/api/content/${id}`).then(res => res.json()),
+      fetch(`/api/content/${postId}`).then(res => res.json()),
+    enabled: postId > 0,
   });
-  
-  // Sayfa yüklendiğinde görüntüleme sayısını kaydet
+
+  // Görüntüleme sayısını kaydetme mutasyonu
+  const viewMutation = useMutation({
+    mutationFn: (id: string) => recordView(id),
+  });
+
   useEffect(() => {
-    // Sayfa tamamen yüklendiğinde ve içerik hazır olduğunda görüntüleme kaydı yap
-    if (content && id && document.readyState === 'complete') {
-      recordView(id);
-    } else {
-      // Sayfa henüz yüklenmediyse, yüklenme tamamlandığında kaydı yap
-      const handleLoad = () => {
-        if (content && id) {
-          recordView(id);
-        }
-      };
-      
-      window.addEventListener('load', handleLoad);
-      return () => window.removeEventListener('load', handleLoad);
+    if (content && id && !hasViewed) {
+      // Sadece bir kere görüntüleme kaydı yapıyoruz
+      viewMutation.mutate(id);
+      setHasViewed(true);
     }
-  }, [content, id]);
+  }, [content, id, hasViewed, viewMutation]);
+
+  // Minimum içerik yüksekliği - CLS önleme için
+  const minContentHeight = "min-h-[70vh]";
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
+      <div className={cn("container mx-auto p-4", minContentHeight)}>
         <Card className="animate-pulse">
-          <CardContent className="h-96 bg-muted mt-4" />
+          <CardContent className="p-6">
+            <Skeleton className="h-12 w-3/4 mb-4" />
+            <div className="flex space-x-4 items-center mb-6">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            
+            <div className="space-y-4 mt-8">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (!content) {
+  if (error || !content) {
     return (
-      <div className="container mx-auto p-4">
+      <div className={cn("container mx-auto p-4", minContentHeight)}>
         <Card className="bg-destructive/10">
-          <CardContent>
-            <h2 className="text-xl font-semibold mb-2">İçerik bulunamadı</h2>
-            <p>Bu içerik silinmiş veya mevcut değil.</p>
+          <CardContent className="p-6 text-center">
+            <h1 className="text-2xl font-bold">İçerik bulunamadı</h1>
+            <p className="mt-4">
+              Aradığınız içerik bulunamadı veya kaldırılmış olabilir.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -115,71 +144,94 @@ export default function Post() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <Seo 
-        title={content.title || `İçerik #${content.id}`}
-        description={truncatedContent}
-        type="article"
-        canonicalUrl={currentUrl}
-        breadcrumb={[
-          { position: 1, name: "Ana Sayfa", item: `${window.location.origin}/` },
-          { position: 2, name: "Blog Yazıları", item: `${window.location.origin}/` },
-          { position: 3, name: content.title || `İçerik #${content.id}`, item: currentUrl }
-        ]}
-      />
+    <>
+      <Helmet>
+        <title>{content.title}</title>
+        <meta name="description" content={truncatedContent} />
+        <meta property="og:title" content={content.title} />
+        <meta property="og:description" content={truncatedContent} />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={content.title} />
+        <meta name="twitter:description" content={truncatedContent} />
+      </Helmet>
 
-      <script type="application/ld+json">
-        {JSON.stringify(tableOfContentsSchema)}
-      </script>
+      <div className={cn("container mx-auto p-4", minContentHeight)}>
+        <Seo 
+          title={content.title || `İçerik #${content.id}`}
+          description={truncatedContent}
+          type="article"
+          canonicalUrl={currentUrl}
+          breadcrumb={[
+            { position: 1, name: "Ana Sayfa", item: `${window.location.origin}/` },
+            { position: 2, name: "Blog Yazıları", item: `${window.location.origin}/` },
+            { position: 3, name: content.title || `İçerik #${content.id}`, item: currentUrl }
+          ]}
+        />
 
-      <Breadcrumb 
-        items={[
-          { label: "Blog Yazıları", href: "/" },
-          { label: content.title || `İçerik #${content.id}` }
-        ]} 
-      />
+        <script type="application/ld+json">
+          {JSON.stringify(tableOfContentsSchema)}
+        </script>
 
-      <Link href="/">
-        <Button variant="ghost" className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Yazılara Dön
-        </Button>
-      </Link>
+        <Breadcrumb 
+          items={[
+            { label: "Blog Yazıları", href: "/" },
+            { label: content.title || `İçerik #${content.id}` }
+          ]} 
+        />
 
-      <Card>
-        <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-6">
-            {content.title || `İçerik #${content.id}`}
-          </h1>
+        <Link href="/">
+          <Button variant="ghost" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Yazılara Dön
+          </Button>
+        </Link>
 
-          <ShareButtons 
-            url={currentUrl}
-            title={content.title || `İçerik #${content.id}`}
-            description={truncatedContent}
-          />
+        <Card>
+          <CardContent className="p-6">
+            <h1 className="text-3xl font-bold mb-6">
+              {content.title || `İçerik #${content.id}`}
+            </h1>
 
-          <div className="prose prose-lg max-w-none mt-6" dangerouslySetInnerHTML={{ __html: contentWithIds }} />
+            <ShareButtons 
+              url={currentUrl}
+              title={content.title || `İçerik #${content.id}`}
+              description={truncatedContent}
+            />
 
-          {headings.length > 0 && (
-            <div className="mt-8 border-t pt-6">
-              <div className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <List className="h-5 w-5" />
-                <h2>İçindekiler</h2>
+            <div 
+              className="prose prose-lg max-w-none mt-6 content-placeholder min-h-[300px]" 
+              style={{ 
+                // İçerik yüklenirken dengelenmesi için CSS
+                // CLS sorununu azaltır
+                minHeight: 'calc(100vh - 400px)',
+                display: 'block',
+                width: '100%'
+              }}
+              dangerouslySetInnerHTML={{ __html: contentWithIds }} 
+            />
+
+            {headings.length > 0 && (
+              <div className="mt-8 border-t pt-6">
+                <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+                  <List className="h-5 w-5" />
+                  <h2>İçindekiler</h2>
+                </div>
+                <nav className="space-y-2">
+                  {headings.map((heading, index) => (
+                    <a
+                      key={index}
+                      href={`#${heading.id}`}
+                      className="block text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {heading.text}
+                    </a>
+                  ))}
+                </nav>
               </div>
-              <nav className="space-y-2">
-                {headings.map((heading, index) => (
-                  <a
-                    key={index}
-                    href={`#${heading.id}`}
-                    className="block text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {heading.text}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

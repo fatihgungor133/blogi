@@ -30,12 +30,27 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
+        {/* Breadcrumb loading */}
+        <div className="h-6 w-32 bg-muted rounded animate-pulse mb-4"></div>
+        
+        {/* Title loading */}
+        <div className="h-10 w-64 bg-muted rounded animate-pulse mb-8"></div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="h-20 bg-muted" />
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} className="animate-pulse h-[100px]">
+              <CardHeader>
+                <div className="h-6 w-3/4 bg-muted rounded"></div>
+              </CardHeader>
             </Card>
           ))}
+        </div>
+        
+        {/* Pagination loading */}
+        <div className="flex justify-between items-center mt-8">
+          <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
+          <div className="h-6 w-20 bg-muted rounded animate-pulse"></div>
+          <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
         </div>
       </div>
     );
@@ -81,7 +96,7 @@ export default function Home() {
             key={content.id} 
             href={`/post/${content.baslik_id}/${content.slug || `icerik-${content.id}`}`}
           >
-            <Card className="hover:bg-accent transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg cursor-pointer h-full group">
+            <Card className="hover:bg-accent transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg cursor-pointer h-full card-fixed-height group">
               <CardHeader>
                 <CardTitle className="group-hover:translate-x-1 transition-transform duration-300">
                   {content.title || `İçerik #${content.id}`}
@@ -93,7 +108,7 @@ export default function Home() {
       </div>
 
       {titles.length > 0 && (
-        <div className="flex justify-between items-center mt-8">
+        <div className="flex justify-between items-center mt-8 pagination-container">
           <Button 
             variant="outline"
             onClick={() => setPage(p => Math.max(1, p - 1))}

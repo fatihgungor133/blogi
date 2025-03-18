@@ -2,10 +2,91 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Blog İçerik Tarayıcısı</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content="Blog İçerik Tarayıcısı - Faydalı makaleler ve içerikler" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    
+    <!-- AdSense Kodu -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
+    
+    <!-- Critical CSS (FOUC önleme) -->
+    <style>
+      /* FOUC (Flash of Unstyled Content) Önleme */
+      .loading {
+        opacity: 0;
+        visibility: hidden;
+      }
+      
+      html.hydrated .loading {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.15s ease-in-out;
+      }
+      
+      /* Font Yükleme Optimizasyonu ve CLS Önleme */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+      
+      html.fonts-loaded body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+      
+      /* Minimum İçerik Yükseklikleri (CLS önleme) */
+      .content-placeholder {
+        min-height: 300px;
+      }
+      
+      /* Karanlık/Aydınlık Tema Geçiş Optimizasyonu */
+      :root {
+        color-scheme: light dark;
+      }
+    </style>
+
+    <!-- Font Yükleme Optimizasyonu için JS -->
+    <script>
+      // Web Fonts yükleme tespit
+      if ("fonts" in document) {
+        document.fonts.ready.then(function() {
+          document.documentElement.classList.add('fonts-loaded');
+        });
+      } else {
+        // Fallback için basit bir zamanlayıcı (eskice tarayıcılar için)
+        setTimeout(function() {
+          document.documentElement.classList.add('fonts-loaded');
+        }, 300);
+      }
+      
+      // FOUC önleme - sayfa yüklendikten sonra içeriği göster
+      document.addEventListener('DOMContentLoaded', function() {
+        document.documentElement.classList.add('hydrated');
+      });
+      
+      // Layout Shift Performans Ölçümü (geliştirme için)
+      if (window.PerformanceObserver && 
+          PerformanceObserver.supportedEntryTypes && 
+          PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
+        
+        new PerformanceObserver((entryList) => {
+          for (const entry of entryList.getEntries()) {
+            if (!entry.hadRecentInput && entry.value > 0.01) {
+              console.warn(`Layout shift tespit edildi: ${entry.value.toFixed(4)}`);
+            }
+          }
+        }).observe({type: 'layout-shift', buffered: true});
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" class="loading">
+      <!-- Uygulama içeriği buraya yüklenecek -->
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

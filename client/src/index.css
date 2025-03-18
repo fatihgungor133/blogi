@@ -11,3 +11,35 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* CLS (Cumulative Layout Shift) iyileştirmeleri */
+
+/* Sayfa içeriğine yükleme sırasında minimum yükseklik ver */
+.container {
+  min-height: 70vh;
+}
+
+/* Fontlar yüklenirken metin genişliği değişimini önle */
+html {
+  font-display: swap;
+}
+
+/* Card yüksekliklerini standartlaştır */
+.card-fixed-height {
+  min-height: 100px;
+}
+
+/* İçerik yüklenirken placeholder alanları için */
+.content-placeholder {
+  min-height: 300px;
+}
+
+/* Başlık alanlarına minimum yükseklik */
+h1, h2, h3 {
+  min-height: 1.2em;
+}
+
+/* Sayfa numaralandırma alanı için sabit yükseklik */
+.pagination-container {
+  min-height: 40px;
+}

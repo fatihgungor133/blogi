@@ -44,6 +44,24 @@ export async function registerRoutes(app: Express) {
     })
   );
 
+  // Web Vitals Analitik Endpoint'i
+  app.post('/api/analytics/vitals', (req, res) => {
+    const metric = req.body;
+    
+    // Üretim ortamında bunları bir veritabanına veya analitik servisine kaydedebilirsiniz
+    // Bu örnekte sadece konsola yazdırıyoruz
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Web Vitals]', metric);
+    } else {
+      // Üretim ortamında loglama yapabilirsiniz
+      // İsteğe bağlı olarak buraya veritabanı kodları eklenebilir
+      // Örnek:
+      // await pool.query('INSERT INTO web_vitals SET ?', [metric]);
+    }
+    
+    res.status(200).send('Kaydedildi');
+  });
+
   // Mevcut API rotaları
   app.get('/api/titles', async (req, res) => {
     try {
