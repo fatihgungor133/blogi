@@ -8,6 +8,33 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
 import type { Content } from "@shared/schema";
 import { ShareButtons } from "@/components/ShareButtons";
+import { useEffect } from "react";
+
+// Görüntüleme kaydı için bir araç fonksiyonu
+async function recordView(id: string) {
+  try {
+    // Önbelleğe almayı kesinlikle önlemek için, URL'ye timestamp ekleyelim
+    const timestamp = new Date().getTime();
+    const response = await fetch(`/api/views/record?id=${id}&t=${timestamp}`, {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
+      // Önbelleğe almayı kesinlikle reddetmek için
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Görüntüleme kaydedilemedi');
+    }
+    
+    console.log('Görüntüleme başarıyla kaydedildi');
+  } catch (error) {
+    console.error('Görüntüleme kaydedilirken hata oluştu:', error);
+  }
+}
 
 export default function Post() {
   const { id, slug } = useParams();
@@ -15,16 +42,27 @@ export default function Post() {
   const { data: content, isLoading } = useQuery<Content>({
     queryKey: ['/api/content', id],
     queryFn: () => 
-      fetch(`/api/content/${id}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }).then(res => res.json()),
-    staleTime: 0
+      fetch(`/api/content/${id}`).then(res => res.json()),
   });
   
+  // Sayfa yüklendiğinde görüntüleme sayısını kaydet
+  useEffect(() => {
+    // Sayfa tamamen yüklendiğinde ve içerik hazır olduğunda görüntüleme kaydı yap
+    if (content && id && document.readyState === 'complete') {
+      recordView(id);
+    } else {
+      // Sayfa henüz yüklenmediyse, yüklenme tamamlandığında kaydı yap
+      const handleLoad = () => {
+        if (content && id) {
+          recordView(id);
+        }
+      };
+      
+      window.addEventListener('load', handleLoad);
+      return () => window.removeEventListener('load', handleLoad);
+    }
+  }, [content, id]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">

@@ -25,6 +25,10 @@ declare module "express-session" {
   }
 }
 
+// IP - İçerik önbelleği (aynı IP'nin kısa sürede tekrar tekrar sayfa görüntüleme isteği yapmasını engellemek için)
+const viewsCache = new Map();
+const CACHE_DURATION = 60 * 1000; // 60 saniye (milisaniye cinsinden)
+
 export async function registerRoutes(app: Express) {
   // Session middleware - basit bellek tabanlı
   app.use(
@@ -62,22 +66,6 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ error: 'İçerik bulunamadı' });
       }
       
-      // Görüntüleme sayısını otomatik olarak artır
-      // Her istek geldiğinde content tablosunda views değerini bir artır
-      try {
-        await pool.query('UPDATE icerik SET views = views + 1 WHERE baslik_id = ?', [titleId]);
-        // İçerik nesnesindeki views değerini de güncelle ki doğru sayı dönsün
-        content.views = (content.views || 0) + 1;
-      } catch (updateError) {
-        console.error('Görüntüleme sayısı güncellenirken hata:', updateError);
-        // Hata olsa bile içeriği göstermeye devam et
-      }
-      
-      // Önbelleğe almayı önle
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      
       res.json(content);
     } catch (error) {
       res.status(500).json({ error: 'İçerik yüklenirken hata oluştu' });
@@ -104,6 +92,73 @@ export async function registerRoutes(app: Express) {
       res.json(results);
     } catch (error) {
       res.status(500).json({ error: 'Popüler içerikler yüklenirken hata oluştu' });
+    }
+  });
+
+  // Görüntüleme sayısını kaydetmek için tamamen ayrı bir endpoint
+  app.get('/api/views/record', async (req, res) => {
+    try {
+      // Önbelleğe almayı kesinlikle önlemek için headers
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      
+      // ID parametresini al
+      const titleId = parseInt(req.query.id as string);
+      
+      if (!titleId || isNaN(titleId)) {
+        return res.status(400).json({ error: 'Geçersiz ID' });
+      }
+      
+      // IP adresi (proxy arkasında çalışıyorsa X-Forwarded-For header'ını kullan)
+      const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+      
+      // IP ve içerik ID'sine dayalı önbellek anahtarı oluştur
+      const cacheKey = `${clientIp}:${titleId}`;
+      
+      // Bu IP ve içerik ID kombinasyonu için önbellekte kayıt var mı kontrol et
+      const cachedTimestamp = viewsCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (cachedTimestamp && now - cachedTimestamp < CACHE_DURATION) {
+        // Son görüntülemeden bu yana yeterli zaman geçmediyse, sayacı artırma
+        return res.json({ 
+          success: true,
+          cached: true,
+          message: 'Bu içerik yakın zamanda görüntülendi, sayaç artırılmadı'
+        });
+      }
+      
+      // Bu endpoint'e her istek geldiğinde görüntüleme sayısını artır
+      const [result] = await pool.query('UPDATE icerik SET views = views + 1 WHERE baslik_id = ?', [titleId]);
+      
+      // IP ve içerik ID kombinasyonunu önbelleğe ekle
+      viewsCache.set(cacheKey, now);
+      
+      // Önbelleği temizlemek için 1 saatte bir kontrol et
+      setTimeout(() => {
+        if (viewsCache.has(cacheKey)) {
+          viewsCache.delete(cacheKey);
+        }
+      }, CACHE_DURATION * 2); // Önbellekte tutulan sürenin 2 katı kadar sonra temizle
+      
+      // İçeriğin güncel görüntüleme sayısını al
+      const [rows] = await pool.query('SELECT views FROM icerik WHERE baslik_id = ? LIMIT 1', [titleId]);
+      
+      // Başarılı yanıt döndür
+      res.json({ 
+        success: true, 
+        message: 'Görüntüleme sayısı kaydedildi',
+        views: rows.length > 0 ? rows[0].views : 0
+      });
+      
+    } catch (error) {
+      console.error('Görüntüleme kaydedilirken hata:', error);
+      res.status(500).json({ 
+        error: 'Görüntüleme sayısı kaydedilemedi', 
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
