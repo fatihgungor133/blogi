@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
-import { getPost, viewPost } from "@/lib/api";
+import { getPost, viewPost, fetchContentDirect, getContentEndpoint } from "@/lib/api";
 import { formatDate, getFromLocalCache, saveToLocalCache } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,9 +52,43 @@ export default function Post() {
   const queryClient = useQueryClient();
   const [retryCount, setRetryCount] = useState(0);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [apiEndpoint, setApiEndpoint] = useState<string | null>(null);
+  const [isApiTesting, setIsApiTesting] = useState(false);
 
   // URL'deki id parametresini sayıya çevir
   const postId = id ? parseInt(id, 10) : 0;
+
+  // API endpoint'ini test et ve doğru endpoint'i belirle
+  useEffect(() => {
+    const testEndpoints = async () => {
+      if (postId > 0 && !apiEndpoint) {
+        setIsApiTesting(true);
+        try {
+          // Önce localStorage'dan kayıtlı endpoint'i kontrol et
+          const savedEndpoint = getContentEndpoint();
+          if (savedEndpoint) {
+            console.log('Kaydedilmiş API endpoint kullanılıyor:', savedEndpoint);
+            setApiEndpoint(savedEndpoint);
+          } else {
+            // Tüm muhtemel endpoint'leri test et
+            await fetchContentDirect(postId);
+            
+            // Test başarılıysa endpoint güncellenmiş olacak
+            const testedEndpoint = getContentEndpoint();
+            console.log('Test edilen API endpoint:', testedEndpoint);
+            setApiEndpoint(testedEndpoint);
+          }
+        } catch (error) {
+          console.error('API endpoint testi başarısız:', error);
+          setFetchError('API endpoint bulunamadı. Lütfen daha sonra tekrar deneyin.');
+        } finally {
+          setIsApiTesting(false);
+        }
+      }
+    };
+    
+    testEndpoints();
+  }, [postId]);
 
   // Önbelleği temizleme fonksiyonu
   const clearPostCache = () => {
@@ -91,28 +125,53 @@ export default function Post() {
 
   // İçerik sorgusu
   const { data: content, isLoading, error, isError } = useQuery<Content>({
-    queryKey: [...getContentCacheKey(postId), retryCount], // retryCount ekleyerek yeniden yükleme sağlanıyor
+    queryKey: [...getContentCacheKey(postId), retryCount, apiEndpoint], // Endpoint değişirse yeniden yükle
     queryFn: async () => {
       setFetchError(null);
       try {
-        // Doğrudan ağdan al - önbellek sorunlarını çözmek için
-        const response = await fetch(`/api/content/${postId}?t=${Date.now()}`, {
+        // Eğer endpoint henüz belirlenmediyse bekle
+        if (!apiEndpoint && !isApiTesting) {
+          throw new Error('API endpoint henüz belirlenmedi');
+        }
+        
+        // Doğru API yolunu kullan
+        const endpoint = apiEndpoint || '/api/content';
+        const apiUrl = `${endpoint}/${postId}?t=${Date.now()}`;
+        console.log('API isteği yapılıyor:', apiUrl);
+        
+        // Doğrudan ağdan al
+        const response = await fetch(apiUrl, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
           },
-          cache: 'no-store' // Fetch API'de önbelleği devre dışı bırak
+          cache: 'no-store'
         });
         
         if (!response.ok) {
+          // Yanıt içeriğini de yazdır
+          const responseText = await response.text();
+          console.error('API yanıt hatası:', response.status, response.statusText, responseText);
+          
+          // Başka bir endpoint dene
+          if (retryCount < 1) {
+            // Kaydedilmiş endpoint'i sıfırla ve yeniden dene
+            localStorage.removeItem('api_content_endpoint');
+            setApiEndpoint(null);
+            setRetryCount(prev => prev + 1);
+            throw new Error('API endpoint hatalı, alternatif endpoint deneniyor...');
+          }
+          
           throw new Error(`API yanıt hatası: ${response.status} ${response.statusText}`);
         }
         
+        // Yanıtı JSON olarak ayrıştır
         const data = await response.json();
         
         // Geçerli içerik kontrolü
         if (!data || !data.id || !data.content) {
+          console.error('Geçersiz içerik:', data);
           throw new Error('API geçersiz içerik döndürdü');
         }
         
