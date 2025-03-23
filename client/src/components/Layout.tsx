@@ -73,13 +73,32 @@ export function Layout({ children, title, description }: LayoutProps) {
     fetchSettings();
   }, []);
 
-  if (isLoading) {
-    return <div>Yükleniyor...</div>;
-  }
-
   // Varsayılan değeri doğrudan belirtin
   const siteName = siteSettings?.siteName || 'Manisa Haber Gazetesi';
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
+
+  // Sayfa yüklenirken skelton görünümü
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="h-16 bg-background border-b w-full">
+          <div className="container mx-auto h-full flex items-center px-4">
+            <div className="h-8 w-48 bg-gray-200 animate-pulse rounded" />
+          </div>
+        </div>
+        <main className="w-full mb-auto flex-grow">
+          <div className="container mx-auto px-4 py-8">
+            <div className="w-full h-[70vh] bg-gray-100 animate-pulse rounded" />
+          </div>
+        </main>
+        <div className="h-40 bg-background border-t w-full">
+          <div className="container mx-auto px-4 py-4">
+            <div className="h-32 bg-gray-100 animate-pulse rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-between">
@@ -91,7 +110,7 @@ export function Layout({ children, title, description }: LayoutProps) {
         />
       )}
       <Header siteName={siteName} />
-      <main className="w-full mb-auto">
+      <main className="w-full mb-auto flex-grow">
         {children}
       </main>
       <Footer settings={footerSettings || defaultFooterSettings} />

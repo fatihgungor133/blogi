@@ -44,6 +44,7 @@ export default function Post() {
   const { id, slug } = useParams();
   const { theme } = useTheme();
   const [hasViewed, setHasViewed] = useState(false);
+  const [layoutShifts, setLayoutShifts] = useState<{value: number, time: number}[]>([]);
 
   // ID parametresi string olarak gelir, sayıya çevirmemiz gerekiyor
   const postId = id ? parseInt(id) : 0;
@@ -54,6 +55,50 @@ export default function Post() {
       fetch(`/api/content/${postId}`).then(res => res.json()),
     enabled: postId > 0,
   });
+
+  // CLS (Cumulative Layout Shift) izleme
+  useEffect(() => {
+    // CLS'yi izleyen PerformanceObserver
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        // Toplam CLS değeri
+        let cumulativeLayoutShiftScore = 0;
+        
+        const observer = new PerformanceObserver((entryList) => {
+          for (const entry of entryList.getEntries()) {
+            // Layout shift değeri
+            if (!entry.hadRecentInput) {
+              const currentShift = entry.value;
+              cumulativeLayoutShiftScore += currentShift;
+              
+              // 0.1'den büyük layout shiftleri kaydet
+              if (currentShift > 0.05) {
+                console.log(`Layout shift tespit edildi: ${currentShift.toFixed(4)}`);
+                setLayoutShifts(prev => [...prev, {
+                  value: currentShift,
+                  time: entry.startTime
+                }]);
+                
+                // Büyük layout shiftleri tespit et (>0.1)
+                if (currentShift > 0.1) {
+                  console.warn(`Büyük düzen kayması tespit edildi: ${currentShift.toFixed(4)} at ${entry.startTime.toFixed(0)}ms`);
+                }
+              }
+            }
+          }
+        });
+        
+        // Layout shift'leri izle
+        observer.observe({ type: 'layout-shift', buffered: true });
+        
+        return () => {
+          observer.disconnect();
+        };
+      } catch (e) {
+        console.error('Layout shift izleme hatası:', e);
+      }
+    }
+  }, []);
 
   // Görüntüleme sayısını kaydetme mutasyonu
   const viewMutation = useMutation({
@@ -74,15 +119,15 @@ export default function Post() {
   if (isLoading) {
     return (
       <div className={cn("container mx-auto p-4", minContentHeight)}>
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <Skeleton className="h-12 w-3/4 mb-4" />
-            <div className="flex space-x-4 items-center mb-6">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-            
-            <div className="space-y-4 mt-8">
+        <Card className="animate-pulse border border-border rounded-lg shadow-sm">
+          <CardHeader className="py-3 px-4">
+            <Skeleton className="h-10 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2 mb-1" />
+            <Skeleton className="h-3 w-32" />
+          </CardHeader>
+          
+          <div className="p-6">            
+            <div className="space-y-4 mt-2">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-5/6" />
@@ -93,6 +138,15 @@ export default function Post() {
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+          
+          <CardContent className="p-6 border-t">
+            <Skeleton className="h-8 w-full mb-4" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
             </div>
           </CardContent>
         </Card>
@@ -208,9 +262,8 @@ export default function Post() {
           </CardHeader>
           
           <div 
-            className="prose prose-lg max-w-none mt-6 content-placeholder" 
+            className="prose prose-lg max-w-none content-placeholder" 
             style={{ 
-              minHeight: 'auto',
               display: 'block',
               width: '100%',
               padding: '0 1rem 1.5rem 1rem'
@@ -218,7 +271,7 @@ export default function Post() {
             dangerouslySetInnerHTML={{ __html: contentWithIds }} 
           />
 
-          <CardContent className="p-6">
+          <CardContent className="p-6 border-t">
             <ShareButtons 
               url={currentUrl}
               title={content.title || `İçerik #${content.id}`}
@@ -226,7 +279,7 @@ export default function Post() {
             />
 
             {headings.length > 0 && (
-              <div className="mt-8 border-t pt-6">
+              <div className="mt-8 pt-6 border-t">
                 <div className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <List className="h-5 w-5" />
                   <h2>İçindekiler</h2>
