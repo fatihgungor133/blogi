@@ -108,4 +108,40 @@ export function useBaslikIdParam(): boolean {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * API İşlemleri
+ */
+
+/**
+ * İçerik detayını getir
+ */
+export async function getPost(id: number) {
+  const response = await fetch(`/api/content/${id}`);
+  if (!response.ok) {
+    throw new Error('İçerik alınamadı');
+  }
+  return response.json();
+}
+
+/**
+ * Görüntüleme sayısını artır
+ */
+export async function viewPost(id: number) {
+  const response = await fetch(`/api/views/record?id=${id}`, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    },
+    cache: 'no-store'
+  });
+  
+  if (!response.ok) {
+    throw new Error('Görüntüleme kaydedilemedi');
+  }
+  
+  return response.json();
 } 

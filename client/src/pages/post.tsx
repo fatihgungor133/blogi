@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useRoute, useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
-import { getPost, viewPost, fetchContentDirect, getContentEndpoint, useBaslikIdParam } from "@/lib/api";
-import { formatDate, getFromLocalCache, saveToLocalCache } from "@/lib/utils";
+import { getPost, viewPost } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/components/ThemeProvider";
@@ -28,7 +28,6 @@ async function recordView(id: string) {
         'Pragma': 'no-cache',
         'Expires': '0'
       },
-      // Önbelleğe almayı kesinlikle reddetmek için
       cache: 'no-store'
     });
     
@@ -42,7 +41,6 @@ async function recordView(id: string) {
 
 // Cache anahtarı oluşturma fonksiyonu
 const getContentCacheKey = (id: number) => [`/api/content`, id];
-const getLocalStorageKey = (id: number) => `content_${id}`;
 
 export default function Post() {
   const { id, slug } = useParams();
@@ -52,51 +50,13 @@ export default function Post() {
   const queryClient = useQueryClient();
   const [retryCount, setRetryCount] = useState(0);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [apiEndpoint, setApiEndpoint] = useState<string | null>(null);
-  const [isApiTesting, setIsApiTesting] = useState(false);
-  const [isBaslikIdParam, setIsBaslikIdParam] = useState(useBaslikIdParam());
 
   // URL'deki id parametresini sayıya çevir
   const postId = id ? parseInt(id, 10) : 0;
 
-  // API endpoint'ini test et ve doğru endpoint'i belirle
-  useEffect(() => {
-    const testEndpoints = async () => {
-      if (postId > 0 && !apiEndpoint) {
-        setIsApiTesting(true);
-        try {
-          // Önce localStorage'dan kayıtlı endpoint'i kontrol et
-          const savedEndpoint = getContentEndpoint();
-          if (savedEndpoint) {
-            console.log('Kaydedilmiş API endpoint kullanılıyor:', savedEndpoint);
-            setApiEndpoint(savedEndpoint);
-          } else {
-            // Tüm muhtemel endpoint'leri test et
-            await fetchContentDirect(postId);
-            
-            // Test başarılıysa endpoint güncellenmiş olacak
-            const testedEndpoint = getContentEndpoint();
-            console.log('Test edilen API endpoint:', testedEndpoint);
-            setApiEndpoint(testedEndpoint);
-          }
-        } catch (error) {
-          console.error('API endpoint testi başarısız:', error);
-          setFetchError('API endpoint bulunamadı. Lütfen daha sonra tekrar deneyin.');
-        } finally {
-          setIsApiTesting(false);
-        }
-      }
-    };
-    
-    testEndpoints();
-  }, [postId]);
-
   // Önbelleği temizleme fonksiyonu
   const clearPostCache = () => {
     try {
-      // LocalStorage'dan temizle
-      localStorage.removeItem(getLocalStorageKey(postId));
-      
       // React Query önbelleğinden temizle
       queryClient.removeQueries({ queryKey: getContentCacheKey(postId) });
       
@@ -110,48 +70,14 @@ export default function Post() {
     }
   };
 
-  // Önce yerel önbellekten içeriğe erişmeyi dene
-  const [localCachedContent, setLocalCachedContent] = useState<Content | null>(null);
-
-  // Önbellekten içeriği yükleme
-  useEffect(() => {
-    if (postId > 0) {
-      const cached = getFromLocalCache<Content>(getLocalStorageKey(postId));
-      if (cached) {
-        setLocalCachedContent(cached);
-        console.log("İçerik yerel önbellekten yüklendi");
-      }
-    }
-  }, [postId, retryCount]);
-
   // İçerik sorgusu
   const { data: content, isLoading, error, isError } = useQuery<Content>({
-    queryKey: [...getContentCacheKey(postId), retryCount, apiEndpoint, isBaslikIdParam], // Endpoint değişirse yeniden yükle
+    queryKey: [...getContentCacheKey(postId), retryCount], 
     queryFn: async () => {
       setFetchError(null);
       try {
-        // Eğer endpoint henüz belirlenmediyse bekle
-        if (!apiEndpoint && !isApiTesting) {
-          throw new Error('API endpoint henüz belirlenmedi');
-        }
-        
-        // Doğru API yolunu kullan - URL parametresi id olarak geliyor, bu direkt içerik ID'si olmayabilir
-        // Olası durumda bu bir baslik_id olabilir, bu yüzden parametre adını belirterek gönderelim
-        const endpoint = apiEndpoint || '/api/content';
-        
-        let apiUrl;
-        // Başlık ID mi yoksa içerik ID mi kullanılacak?
-        if (isBaslikIdParam || endpoint.includes('baslik_id')) {
-          // Başlık ID ile sorgu yap
-          apiUrl = `${endpoint.split('?')[0]}?baslik_id=${postId}&t=${Date.now()}`;
-        } else if (endpoint.includes('?')) {
-          // Query string formatı
-          apiUrl = `${endpoint.split('?')[0]}?id=${postId}&t=${Date.now()}`;
-        } else {
-          // Klasik path formatı
-          apiUrl = `${endpoint}/${postId}?t=${Date.now()}`;
-        }
-        
+        // Doğru API yolunu kullan
+        const apiUrl = `/api/content/${postId}?t=${Date.now()}`;
         console.log('API isteği yapılıyor:', apiUrl);
         
         // Doğrudan ağdan al
@@ -168,71 +94,6 @@ export default function Post() {
           // Yanıt içeriğini de yazdır
           const responseText = await response.text();
           console.error('API yanıt hatası:', response.status, response.statusText, responseText);
-          
-          // Başka formatta deneyelim - önce baslik_id ile deneyelim
-          if (!isBaslikIdParam) {
-            try {
-              const altUrl = `${endpoint.split('?')[0]}?baslik_id=${postId}&t=${Date.now()}`;
-              console.log('baslik_id ile deneniyor:', altUrl);
-              
-              const altResponse = await fetch(altUrl, {
-                headers: {
-                  'Cache-Control': 'no-cache, no-store, must-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                },
-                cache: 'no-store'
-              });
-              
-              if (altResponse.ok) {
-                const altData = await altResponse.json();
-                if (altData && (altData.id || altData.content)) {
-                  // Başarılı olduğunu kaydet
-                  localStorage.setItem('api_baslik_id_param', 'true');
-                  setIsBaslikIdParam(true);
-                  return altData;
-                }
-              }
-            } catch (err) {
-              console.error('Alternatif baslik_id hatası:', err);
-            }
-          }
-          
-          // Başka bir endpoint dene - bu sefer klasik ID formatında
-          try {
-            const alternativeUrl = `${endpoint.split('?')[0]}/${postId}?t=${Date.now()}`;
-            console.log('Alternatif API isteği deneniyor:', alternativeUrl);
-            
-            const altResponse = await fetch(alternativeUrl, {
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              },
-              cache: 'no-store'
-            });
-            
-            if (altResponse.ok) {
-              const altData = await altResponse.json();
-              if (altData && (altData.id || altData.content)) {
-                return altData;
-              }
-            }
-          } catch (altError) {
-            console.error('Alternatif API isteği hatası:', altError);
-          }
-          
-          // Başka bir endpoint dene
-          if (retryCount < 1) {
-            // Kaydedilmiş endpoint'i sıfırla ve yeniden dene
-            localStorage.removeItem('api_content_endpoint');
-            localStorage.removeItem('api_baslik_id_param');
-            setApiEndpoint(null);
-            setIsBaslikIdParam(false);
-            setRetryCount(prev => prev + 1);
-            throw new Error('API endpoint hatalı, alternatif endpoint deneniyor...');
-          }
-          
           throw new Error(`API yanıt hatası: ${response.status} ${response.statusText}`);
         }
         
@@ -240,68 +101,27 @@ export default function Post() {
         const data = await response.json();
         
         // Geçerli içerik kontrolü
-        if (!data || (!data.id && !data.baslik_id) || !data.content) {
+        if (!data || !data.id || !data.content) {
           console.error('Geçersiz içerik:', data);
           throw new Error('API geçersiz içerik döndürdü');
         }
-        
-        // Başarılı veriyi önbelleğe kaydet
-        saveToLocalCache(getLocalStorageKey(postId), data);
         
         return data;
       } catch (error) {
         console.error('İçerik yükleme hatası:', error);
         setFetchError(error instanceof Error ? error.message : 'Bilinmeyen hata');
-        
-        // Önbellekte varsa onu kullan
-        const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(postId));
-        if (cachedContent) {
-          console.log('Hata durumunda önbellekten veri kullanılıyor');
-          return cachedContent;
-        }
-        
         throw error;
       }
     },
     enabled: postId > 0,
-    initialData: localCachedContent,
-    retry: 2,
+    retry: 1,
     retryDelay: 1000,
-    // HARD CACHE AYARLARI
-    staleTime: 1000 * 60 * 60 * 24,
-    cacheTime: 1000 * 60 * 60 * 24 * 7,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, 
-    refetchOnReconnect: false,
+    staleTime: 0,  // Önbelleği devre dışı bırak
+    gcTime: 0,     // Önbelleği devre dışı bırak 
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
-
-  // Diğer içerikler için ön yükleme (preloading)
-  useEffect(() => {
-    if (content && content.id) {
-      // Bir sonraki içeriği de ön yükle (varsa)
-      const nextPostId = content.id + 1;
-      queryClient.prefetchQuery({
-        queryKey: getContentCacheKey(nextPostId),
-        queryFn: () => {
-          // Önce yerel önbellekten kontrol et
-          const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(nextPostId));
-          if (cachedContent) {
-            return Promise.resolve(cachedContent);
-          }
-          
-          // Önbellekte yoksa sunucudan al
-          return fetch(`/api/content/${nextPostId}`)
-            .then(res => res.json())
-            .then(data => {
-              // Yerel önbelleğe kaydet
-              saveToLocalCache(getLocalStorageKey(nextPostId), data);
-              return data;
-            });
-        },
-        staleTime: 1000 * 60 * 60 * 24, // 24 saat
-      });
-    }
-  }, [content, queryClient]);
 
   // CLS (Cumulative Layout Shift) izleme
   useEffect(() => {
@@ -449,22 +269,15 @@ export default function Post() {
     );
   }
 
-  // İçeriği lokal storage'a da kaydet
-  useEffect(() => {
-    if (content) {
-      saveToLocalCache(getLocalStorageKey(content.id), content);
-    }
-  }, [content]);
-
   const truncatedContent = content.content.substring(0, 160);
   const currentSlug = content.slug || `icerik-${content.id}`;
   const contentWithIds = addHeadingIds(content.content);
   const headings = parseHeadings(content.content);
-  const currentUrl = `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`;
+  const currentUrl = `${window.location.origin}/post/${content.id}/${currentSlug}`;
 
   // Redirect if slug doesn't match
   if (slug !== currentSlug) {
-    window.location.href = `/post/${content.baslik_id}/${currentSlug}`;
+    window.location.href = `/post/${content.id}/${currentSlug}`;
     return null;
   }
 
@@ -474,13 +287,13 @@ export default function Post() {
     "@type": "Makale",
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `${window.location.origin}/post/${content.baslik_id}/${currentSlug}`
+      "@id": `${window.location.origin}/post/${content.id}/${currentSlug}`
     },
     "name": content.title || `İçerik #${content.id}`,
     "hasPart": headings.map(heading => ({
       "@type": "WebPageElement",
       "name": heading.text,
-      "url": `${window.location.origin}/post/${content.baslik_id}/${currentSlug}#${heading.id}`
+      "url": `${window.location.origin}/post/${content.id}/${currentSlug}#${heading.id}`
     }))
   };
 

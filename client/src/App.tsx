@@ -17,7 +17,6 @@ const AdminLogin = lazy(() => import('@/pages/admin/login'));
 const AdminDashboard = lazy(() => import('@/pages/admin/dashboard'));
 const AdminSettings = lazy(() => import('@/pages/admin/settings'));
 const CLSDebug = lazy(() => import('@/pages/test/cls-debug'));
-const ApiTest = lazy(() => import('@/pages/api-test'));
 const NotFound = lazy(() => import('@/pages/not-found'));
 
 function Router() {
@@ -32,7 +31,6 @@ function Router() {
           <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
           <ProtectedRoute path="/admin/settings" component={AdminSettings} />
           <Route path="/test/cls" component={CLSDebug} />
-          <Route path="/test/api" component={ApiTest} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>
