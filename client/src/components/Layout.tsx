@@ -82,7 +82,7 @@ export function Layout({ children, title, description }: LayoutProps) {
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       {siteSettings && (
         <Seo 
           title={pageTitle}
