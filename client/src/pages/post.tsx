@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
-import { getPost, viewPost, fetchContentDirect, getContentEndpoint } from "@/lib/api";
+import { getPost, viewPost, fetchContentDirect, getContentEndpoint, useBaslikIdParam } from "@/lib/api";
 import { formatDate, getFromLocalCache, saveToLocalCache } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +54,7 @@ export default function Post() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [apiEndpoint, setApiEndpoint] = useState<string | null>(null);
   const [isApiTesting, setIsApiTesting] = useState(false);
+  const [isBaslikIdParam, setIsBaslikIdParam] = useState(useBaslikIdParam());
 
   // URL'deki id parametresini sayıya çevir
   const postId = id ? parseInt(id, 10) : 0;
@@ -125,7 +126,7 @@ export default function Post() {
 
   // İçerik sorgusu
   const { data: content, isLoading, error, isError } = useQuery<Content>({
-    queryKey: [...getContentCacheKey(postId), retryCount, apiEndpoint], // Endpoint değişirse yeniden yükle
+    queryKey: [...getContentCacheKey(postId), retryCount, apiEndpoint, isBaslikIdParam], // Endpoint değişirse yeniden yükle
     queryFn: async () => {
       setFetchError(null);
       try {
@@ -134,9 +135,23 @@ export default function Post() {
           throw new Error('API endpoint henüz belirlenmedi');
         }
         
-        // Doğru API yolunu kullan
+        // Doğru API yolunu kullan - URL parametresi id olarak geliyor, bu direkt içerik ID'si olmayabilir
+        // Olası durumda bu bir baslik_id olabilir, bu yüzden parametre adını belirterek gönderelim
         const endpoint = apiEndpoint || '/api/content';
-        const apiUrl = `${endpoint}/${postId}?t=${Date.now()}`;
+        
+        let apiUrl;
+        // Başlık ID mi yoksa içerik ID mi kullanılacak?
+        if (isBaslikIdParam || endpoint.includes('baslik_id')) {
+          // Başlık ID ile sorgu yap
+          apiUrl = `${endpoint.split('?')[0]}?baslik_id=${postId}&t=${Date.now()}`;
+        } else if (endpoint.includes('?')) {
+          // Query string formatı
+          apiUrl = `${endpoint.split('?')[0]}?id=${postId}&t=${Date.now()}`;
+        } else {
+          // Klasik path formatı
+          apiUrl = `${endpoint}/${postId}?t=${Date.now()}`;
+        }
+        
         console.log('API isteği yapılıyor:', apiUrl);
         
         // Doğrudan ağdan al
@@ -154,11 +169,66 @@ export default function Post() {
           const responseText = await response.text();
           console.error('API yanıt hatası:', response.status, response.statusText, responseText);
           
+          // Başka formatta deneyelim - önce baslik_id ile deneyelim
+          if (!isBaslikIdParam) {
+            try {
+              const altUrl = `${endpoint.split('?')[0]}?baslik_id=${postId}&t=${Date.now()}`;
+              console.log('baslik_id ile deneniyor:', altUrl);
+              
+              const altResponse = await fetch(altUrl, {
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
+                },
+                cache: 'no-store'
+              });
+              
+              if (altResponse.ok) {
+                const altData = await altResponse.json();
+                if (altData && (altData.id || altData.content)) {
+                  // Başarılı olduğunu kaydet
+                  localStorage.setItem('api_baslik_id_param', 'true');
+                  setIsBaslikIdParam(true);
+                  return altData;
+                }
+              }
+            } catch (err) {
+              console.error('Alternatif baslik_id hatası:', err);
+            }
+          }
+          
+          // Başka bir endpoint dene - bu sefer klasik ID formatında
+          try {
+            const alternativeUrl = `${endpoint.split('?')[0]}/${postId}?t=${Date.now()}`;
+            console.log('Alternatif API isteği deneniyor:', alternativeUrl);
+            
+            const altResponse = await fetch(alternativeUrl, {
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              },
+              cache: 'no-store'
+            });
+            
+            if (altResponse.ok) {
+              const altData = await altResponse.json();
+              if (altData && (altData.id || altData.content)) {
+                return altData;
+              }
+            }
+          } catch (altError) {
+            console.error('Alternatif API isteği hatası:', altError);
+          }
+          
           // Başka bir endpoint dene
           if (retryCount < 1) {
             // Kaydedilmiş endpoint'i sıfırla ve yeniden dene
             localStorage.removeItem('api_content_endpoint');
+            localStorage.removeItem('api_baslik_id_param');
             setApiEndpoint(null);
+            setIsBaslikIdParam(false);
             setRetryCount(prev => prev + 1);
             throw new Error('API endpoint hatalı, alternatif endpoint deneniyor...');
           }
@@ -170,7 +240,7 @@ export default function Post() {
         const data = await response.json();
         
         // Geçerli içerik kontrolü
-        if (!data || !data.id || !data.content) {
+        if (!data || (!data.id && !data.baslik_id) || !data.content) {
           console.error('Geçersiz içerik:', data);
           throw new Error('API geçersiz içerik döndürdü');
         }

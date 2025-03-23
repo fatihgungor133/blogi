@@ -10,7 +10,8 @@ export async function fetchContentDirect(id: number): Promise<any> {
     `/api/blog/content/${id}`,              // Blog alt yolu
     `/api/contents/detail/${id}`,           // Detay yolu
     `/api/content/id/${id}`,                // ID ile
-    `/api/content?id=${id}`                 // Query string versiyonu
+    `/api/content?id=${id}`,                // Query string versiyonu
+    `/api/content?baslik_id=${id}`          // Başlık ID versiyonu
   ];
   
   let successfulUrl = null;
@@ -32,10 +33,29 @@ export async function fetchContentDirect(id: number): Promise<any> {
         const text = await response.text();
         try {
           const data = JSON.parse(text);
-          if (data && (data.id || data.content)) {
+          // Hem id hem de baslik_id'yi kontrol et
+          if (data && (data.id || data.baslik_id || data.content)) {
             console.log(`Başarılı API endpoint bulundu: ${url}`);
             console.log('Veri:', data);
-            successfulUrl = url;
+            
+            // URL'den endpoint kısmını çıkar
+            let endpoint = '';
+            if (url.includes('?')) {
+              // Query string varsa onu koru
+              endpoint = url.split('?')[0];
+              // Başlık ID ile çalışan endpoint'i belirt
+              if (url.includes('baslik_id')) {
+                endpoint += '?baslik_id=';
+                localStorage.setItem('api_baslik_id_param', 'true');
+              } else {
+                endpoint += '?id=';
+              }
+            } else {
+              // Klasik ID endpoint'i
+              endpoint = url.split('/').slice(0, -1).join('/');
+            }
+            
+            successfulUrl = endpoint;
             successData = data;
             break;
           }
@@ -51,7 +71,7 @@ export async function fetchContentDirect(id: number): Promise<any> {
   if (successfulUrl) {
     // Başarılı URL'yi localStorage'a kaydet
     try {
-      localStorage.setItem('api_content_endpoint', successfulUrl.split('/').slice(0, -1).join('/'));
+      localStorage.setItem('api_content_endpoint', successfulUrl);
     } catch (e) {
       console.error('API endpoint kaydetme hatası:', e);
     }
@@ -77,4 +97,15 @@ export function getContentEndpoint(): string {
   
   // Varsayılan değeri döndür
   return '/api/content';
+}
+
+/**
+ * Başlık ID ile mi çalıştığını kontrol et
+ */
+export function useBaslikIdParam(): boolean {
+  try {
+    return localStorage.getItem('api_baslik_id_param') === 'true';
+  } catch (e) {
+    return false;
+  }
 } 
