@@ -1,6 +1,7 @@
 // service-worker.js
-const CACHE_NAME = 'manisa-haber-cache-v1';
-const CONTENT_CACHE_NAME = 'manisa-haber-content-cache-v1';
+const CACHE_NAME = 'manisa-haber-cache-v2';
+const CONTENT_CACHE_NAME = 'manisa-haber-content-cache-v2';
+const API_CACHE_PREFIX = 'api-cache-';
 
 // Önbelleğe alınacak statik varlıklar
 const staticAssets = [
@@ -13,7 +14,7 @@ const staticAssets = [
 
 // Servis işçisi kurulumu
 self.addEventListener('install', async event => {
-  console.log('Service Worker kuruldu');
+  console.log('Service Worker kuruldu (v2)');
   
   // Statik varlıkları önbelleğe al
   const cache = await caches.open(CACHE_NAME);
@@ -23,15 +24,16 @@ self.addEventListener('install', async event => {
   self.skipWaiting();
 });
 
-// Aktifleştirme olayı
+// Aktifleştirme olayı - TÜM ESKİ ÖNBELLEKLERİ TEMİZLE
 self.addEventListener('activate', event => {
-  console.log('Service Worker aktifleştirildi');
+  console.log('Service Worker aktifleştirildi (v2)');
   
-  // Eski önbellekleri temizle
+  // Eski önbellekleri temizle - TÜM ÖNBELLEKLERİ SİL
   event.waitUntil(
     caches.keys().then(keyList => {
       return Promise.all(
         keyList.map(key => {
+          // Yeni cache versiyonları dışındaki tüm önbellekleri sil
           if (key !== CACHE_NAME && key !== CONTENT_CACHE_NAME) {
             console.log('Eski önbellek siliniyor:', key);
             return caches.delete(key);
@@ -47,76 +49,60 @@ self.addEventListener('activate', event => {
 
 // Fetch - API isteklerini önbelleğe alma
 self.addEventListener('fetch', event => {
-  // Sadece GET isteklerini önbelleğe al
+  // Yalnızca get isteklerini ele alıyoruz
   if (event.request.method !== 'GET') {
-    // GET olmayan istekleri doğrudan ağ üzerinden yap
-    event.respondWith(fetch(event.request));
     return;
   }
 
-  // API istekleri için özel cache stratejisi (sadece GET istekleri)
-  if (event.request.url.includes('/api/content/')) {
-    // Stale-while-revalidate stratejisi
-    event.respondWith(staleWhileRevalidate(event.request));
+  const requestUrl = new URL(event.request.url);
+  
+  // İçerik API'sini ele al
+  if (requestUrl.pathname.match(/\/api\/content\/\d+$/)) {
+    // Stale-while-revalidate stratejisi - önce cache, sonra network
+    event.respondWith(
+      caches.open(CONTENT_CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        
+        // Ağdan verileri al (arka planda)
+        const networkPromise = fetch(event.request.clone())
+          .then(response => {
+            // Yanıt başarılıysa önbelleğe yeni verileri al
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone())
+                .catch(err => console.error('Önbelleğe alma hatası:', err));
+            }
+            return response;
+          })
+          .catch(err => {
+            console.error('Ağ isteği hatası:', err);
+            // Ağ hatası durumunda önbellekte var mı diye kontrol et
+            return cachedResponse || Response.error();
+          });
+        
+        // Önbellekte varsa hemen döndür, yoksa ağdan yanıtı bekle
+        return cachedResponse || networkPromise;
+      })
+    );
     return;
   }
 
-  // Diğer GET istekleri için network-first stratejisi
+  // Normal sayfa yükleme istekleri için network-first stratejisi
   event.respondWith(
     fetch(event.request)
-      .then(response => {
-        // 404 veya 500 gibi hata yanıtlarını önbelleğe alma
-        if (!response || response.status !== 200) {
-          return response;
+      .then(networkResponse => {
+        // Başarılı yanıtları önbelleğe al
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache))
+            .catch(err => console.error('Önbelleğe alma hatası:', err));
         }
-
-        // Yanıtın bir kopyasını önbelleğe al
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          try {
-            cache.put(event.request, responseClone);
-          } catch (error) {
-            console.error('Önbelleğe alma hatası:', error);
-          }
-        });
-
-        return response;
+        return networkResponse;
       })
-      .catch(() => {
-        // Ağ başarısız olursa önbellekten yanıt ver
+      .catch(error => {
+        // Ağ hatası durumunda önbellekten yanıt vermeyi dene
+        console.log('Ağ hatası, önbellekten yanıt alınıyor:', error);
         return caches.match(event.request);
       })
   );
-});
-
-// İçerik API'si için stale-while-revalidate stratejisi
-async function staleWhileRevalidate(request) {
-  // Sadece GET isteklerini işle
-  if (request.method !== 'GET') {
-    return fetch(request);
-  }
-
-  const cache = await caches.open(CONTENT_CACHE_NAME);
-  
-  // Önce önbellekten kontrol et
-  const cachedResponse = await cache.match(request);
-  
-  // Arka planda network isteği başlat
-  const networkResponsePromise = fetch(request).then(networkResponse => {
-    // Sadece başarılı yanıtları önbelleğe al
-    if (networkResponse.ok) {
-      try {
-        cache.put(request, networkResponse.clone());
-      } catch (error) {
-        console.error('İçerik önbelleğe alma hatası:', error);
-      }
-    }
-    return networkResponse;
-  }).catch(error => {
-    console.error('Network isteği başarısız:', error);
-    return null;
-  });
-  
-  // Eğer önbellekte varsa önce onu döndür
-  return cachedResponse || networkResponsePromise;
-} 
+}); 

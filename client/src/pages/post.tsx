@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, List } from "lucide-react";
+import { ArrowLeft, List, RefreshCw } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { parseHeadings, addHeadingIds } from "@/lib/utils";
@@ -50,9 +50,30 @@ export default function Post() {
   const [hasViewed, setHasViewed] = useState(false);
   const [layoutShifts, setLayoutShifts] = useState<{value: number, time: number}[]>([]);
   const queryClient = useQueryClient();
+  const [retryCount, setRetryCount] = useState(0);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // ID parametresi string olarak gelir, sayıya çevirmemiz gerekiyor
-  const postId = id ? parseInt(id) : 0;
+  // URL'deki id parametresini sayıya çevir
+  const postId = id ? parseInt(id, 10) : 0;
+
+  // Önbelleği temizleme fonksiyonu
+  const clearPostCache = () => {
+    try {
+      // LocalStorage'dan temizle
+      localStorage.removeItem(getLocalStorageKey(postId));
+      
+      // React Query önbelleğinden temizle
+      queryClient.removeQueries({ queryKey: getContentCacheKey(postId) });
+      
+      console.log(`İçerik önbelleği temizlendi: ID=${postId}`);
+      
+      // Yeniden denemek için sayaç artır
+      setRetryCount(prev => prev + 1);
+      setFetchError(null);
+    } catch (error) {
+      console.error('Önbellek temizleme hatası:', error);
+    }
+  };
 
   // Önce yerel önbellekten içeriğe erişmeyi dene
   const [localCachedContent, setLocalCachedContent] = useState<Content | null>(null);
@@ -66,47 +87,63 @@ export default function Post() {
         console.log("İçerik yerel önbellekten yüklendi");
       }
     }
-  }, [postId]);
+  }, [postId, retryCount]);
 
-  // Agresif önbellekleme yapılandırması ile içerik sorgusu
-  const { data: content, isLoading, error } = useQuery<Content>({
-    queryKey: getContentCacheKey(postId),
+  // İçerik sorgusu
+  const { data: content, isLoading, error, isError } = useQuery<Content>({
+    queryKey: [...getContentCacheKey(postId), retryCount], // retryCount ekleyerek yeniden yükleme sağlanıyor
     queryFn: async () => {
-      // Önce yerel önbellekten kontrol et
-      const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(postId));
-      if (cachedContent) {
-        // Arka planda yine de fetch yap ama önbelleği hemen döndür
-        fetch(`/api/content/${postId}`)
-          .then(res => res.json())
-          .then(freshContent => {
-            // Eğer içerik değiştiyse güncelle
-            saveToLocalCache(getLocalStorageKey(postId), freshContent);
-            // Queryİstemci önbelleğini güncelle
-            queryClient.setQueryData(getContentCacheKey(postId), freshContent);
-          })
-          .catch(err => console.error('Arka plan yenileme hatası:', err));
+      setFetchError(null);
+      try {
+        // Doğrudan ağdan al - önbellek sorunlarını çözmek için
+        const response = await fetch(`/api/content/${postId}?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          cache: 'no-store' // Fetch API'de önbelleği devre dışı bırak
+        });
         
-        return cachedContent;
+        if (!response.ok) {
+          throw new Error(`API yanıt hatası: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Geçerli içerik kontrolü
+        if (!data || !data.id || !data.content) {
+          throw new Error('API geçersiz içerik döndürdü');
+        }
+        
+        // Başarılı veriyi önbelleğe kaydet
+        saveToLocalCache(getLocalStorageKey(postId), data);
+        
+        return data;
+      } catch (error) {
+        console.error('İçerik yükleme hatası:', error);
+        setFetchError(error instanceof Error ? error.message : 'Bilinmeyen hata');
+        
+        // Önbellekte varsa onu kullan
+        const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(postId));
+        if (cachedContent) {
+          console.log('Hata durumunda önbellekten veri kullanılıyor');
+          return cachedContent;
+        }
+        
+        throw error;
       }
-      
-      // Önbellekte yoksa sunucudan al
-      const response = await fetch(`/api/content/${postId}`);
-      const data = await response.json();
-      
-      // Yerel önbelleğe kaydet
-      saveToLocalCache(getLocalStorageKey(postId), data);
-      
-      return data;
     },
     enabled: postId > 0,
-    initialData: localCachedContent, // Eğer yerel önbellekten içerik yüklendiyse, ilk veri olarak kullan
+    initialData: localCachedContent,
+    retry: 2,
+    retryDelay: 1000,
     // HARD CACHE AYARLARI
-    staleTime: 1000 * 60 * 60 * 24, // 24 saat (1 gün) süreyle önbelleğe alınan veri "taze" olarak kabul edilir
-    cacheTime: 1000 * 60 * 60 * 24 * 7, // 7 gün süreyle önbellekte tutulur
-    retry: 1, // Başarısız istekleri sadece 1 kez yeniden dene
-    refetchOnWindowFocus: false, // Pencere odağı değiştiğinde yeniden sorgu yapma
-    refetchOnMount: false, // Bileşen monte edildiğinde yeniden sorgu yapma
-    refetchOnReconnect: false, // Yeniden bağlandığında yeniden sorgu yapma
+    staleTime: 1000 * 60 * 60 * 24,
+    cacheTime: 1000 * 60 * 60 * 24 * 7,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, 
+    refetchOnReconnect: false,
   });
 
   // Diğer içerikler için ön yükleme (preloading)
@@ -235,15 +272,48 @@ export default function Post() {
     );
   }
 
-  if (error || !content) {
+  if (isError || !content) {
     return (
       <div className={cn("container mx-auto p-4", minContentHeight)}>
         <Card className="bg-destructive/10">
           <CardContent className="p-6 text-center">
             <h1 className="text-2xl font-bold">İçerik bulunamadı</h1>
             <p className="mt-4">
-              Aradığınız içerik bulunamadı veya kaldırılmış olabilir.
+              Aradığınız içerik bulunamadı veya geçici bir hata oluştu.
             </p>
+            
+            {fetchError && (
+              <div className="mt-4 p-3 bg-destructive/5 rounded text-left text-sm">
+                <p className="font-semibold">Hata detayı:</p>
+                <p>{fetchError}</p>
+              </div>
+            )}
+            
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+                className="flex items-center"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sayfayı Yenile
+              </Button>
+              
+              <Button 
+                variant="default" 
+                onClick={clearPostCache}
+                className="flex items-center"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Önbelleği Temizle ve Yeniden Dene
+              </Button>
+              
+              <Link href="/">
+                <Button variant="secondary" className="w-full sm:w-auto">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Ana Sayfaya Dön
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
