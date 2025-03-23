@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, List } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -68,8 +68,8 @@ export default function Post() {
     }
   }, [content, id, hasViewed, viewMutation]);
 
-  // Minimum içerik yüksekliği - CLS önleme için
-  const minContentHeight = "min-h-[70vh]";
+  // Minimum içerik yüksekliği - CLS önleme için ama boşluk sorununu çözmek için düşürüldü
+  const minContentHeight = "min-h-[50vh]";
 
   if (isLoading) {
     return (
@@ -186,28 +186,43 @@ export default function Post() {
           </Button>
         </Link>
 
-        <Card>
-          <CardContent className="p-6">
-            <h1 className="text-3xl font-bold mb-6">
+        <Card className="mb-4 border border-border rounded-lg overflow-hidden shadow-sm">
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="mb-1 text-2xl font-bold tracking-tight">
               {content.title || `İçerik #${content.id}`}
-            </h1>
+            </CardTitle>
+            
+            {content.excerpt && (
+              <CardDescription>{content.excerpt}</CardDescription>
+            )}
+            
+            {content.created_at && (
+              <div className="text-sm text-muted-foreground mt-1">
+                {new Date(content.created_at).toLocaleDateString('tr-TR', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </div>
+            )}
+          </CardHeader>
+          
+          <div 
+            className="prose prose-lg max-w-none mt-6 content-placeholder" 
+            style={{ 
+              minHeight: 'auto',
+              display: 'block',
+              width: '100%',
+              padding: '0 1rem 1.5rem 1rem'
+            }}
+            dangerouslySetInnerHTML={{ __html: contentWithIds }} 
+          />
 
+          <CardContent className="p-6">
             <ShareButtons 
               url={currentUrl}
               title={content.title || `İçerik #${content.id}`}
               description={truncatedContent}
-            />
-
-            <div 
-              className="prose prose-lg max-w-none mt-6 content-placeholder min-h-[300px]" 
-              style={{ 
-                // İçerik yüklenirken dengelenmesi için CSS
-                // CLS sorununu azaltır
-                minHeight: 'calc(100vh - 400px)',
-                display: 'block',
-                width: '100%'
-              }}
-              dangerouslySetInnerHTML={{ __html: contentWithIds }} 
             />
 
             {headings.length > 0 && (

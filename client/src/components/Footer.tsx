@@ -6,17 +6,17 @@ interface FooterProps {
 
 export function Footer({ settings }: FooterProps) {
   return (
-    <footer className="bg-background border-t w-full">
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <footer className="bg-background border-t w-full mt-4">
+      <div className="container mx-auto px-4 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <h3 className="font-semibold mb-3">Hakkımızda</h3>
+            <h3 className="font-semibold mb-2">Hakkımızda</h3>
             <p className="text-muted-foreground">
               {settings?.aboutText || 'Modern ve SEO uyumlu blog platformu'}
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-3">Hızlı Linkler</h3>
+            <h3 className="font-semibold mb-2">Hızlı Linkler</h3>
             <ul className="space-y-1">
               <li>
                 <a href="/" className="text-muted-foreground hover:text-foreground">
@@ -36,14 +36,14 @@ export function Footer({ settings }: FooterProps) {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-3">İletişim</h3>
+            <h3 className="font-semibold mb-2">İletişim</h3>
             <p className="text-muted-foreground">
               Email: {settings?.email || 'info@example.com'}<br />
               Tel: {settings?.phone || '+90 212 123 45 67'}
             </p>
           </div>
         </div>
-        <div className="border-t mt-6 pt-6 text-center text-muted-foreground">
+        <div className="border-t mt-4 pt-4 text-center text-muted-foreground text-sm">
           <p>&copy; {new Date().getFullYear()} {settings?.copyright || 'Manisa Haber Gazetesi. Tüm hakları saklıdır.'}</p>
         </div>
       </div>
