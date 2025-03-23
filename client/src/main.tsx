@@ -7,6 +7,19 @@ import "./index.css";
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(<App />);
 
+// Service Worker'ı kaydet
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service worker başarıyla kaydedildi:', registration.scope);
+      })
+      .catch(error => {
+        console.error('Service worker kaydı başarısız:', error);
+      });
+  });
+}
+
 // Web Vitals ölçümlerini başlatma işlemini ana içerik yüklendikten sonraya ertele
 if (typeof window !== 'undefined') {
   // requestIdleCallback API varsa kullan, yoksa setTimeout kullan

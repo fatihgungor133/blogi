@@ -43,3 +43,33 @@ export function addHeadingIds(content: string): string {
     (match, text) => `<h2 id="${createSlug(text.replace(/<[^>]*>/g, ''))}">${text}</h2>`
   );
 }
+
+/**
+ * Yerel depolamadan içeriği getir
+ * @param key - Önbellek anahtarı
+ * @returns İçerik veya null
+ */
+export function getFromLocalCache<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(key);
+    if (cached) {
+      return JSON.parse(cached) as T;
+    }
+  } catch (error) {
+    console.error('Yerel önbellek okuma hatası:', error);
+  }
+  return null;
+}
+
+/**
+ * Yerel depolamaya içeriği kaydet
+ * @param key - Önbellek anahtarı
+ * @param data - Kaydedilecek veri
+ */
+export function saveToLocalCache<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Yerel önbellek yazma hatası:', error);
+  }
+}

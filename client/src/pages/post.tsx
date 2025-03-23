@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useRoute, useParams, Link } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { getPost, viewPost } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getFromLocalCache, saveToLocalCache } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/components/ThemeProvider";
@@ -40,21 +40,102 @@ async function recordView(id: string) {
   }
 }
 
+// Cache anahtarı oluşturma fonksiyonu
+const getContentCacheKey = (id: number) => [`/api/content`, id];
+const getLocalStorageKey = (id: number) => `content_${id}`;
+
 export default function Post() {
   const { id, slug } = useParams();
   const { theme } = useTheme();
   const [hasViewed, setHasViewed] = useState(false);
   const [layoutShifts, setLayoutShifts] = useState<{value: number, time: number}[]>([]);
+  const queryClient = useQueryClient();
 
   // ID parametresi string olarak gelir, sayıya çevirmemiz gerekiyor
   const postId = id ? parseInt(id) : 0;
 
+  // Önce yerel önbellekten içeriğe erişmeyi dene
+  const [localCachedContent, setLocalCachedContent] = useState<Content | null>(null);
+
+  // Önbellekten içeriği yükleme
+  useEffect(() => {
+    if (postId > 0) {
+      const cached = getFromLocalCache<Content>(getLocalStorageKey(postId));
+      if (cached) {
+        setLocalCachedContent(cached);
+        console.log("İçerik yerel önbellekten yüklendi");
+      }
+    }
+  }, [postId]);
+
+  // Agresif önbellekleme yapılandırması ile içerik sorgusu
   const { data: content, isLoading, error } = useQuery<Content>({
-    queryKey: ['/api/content', postId],
-    queryFn: () => 
-      fetch(`/api/content/${postId}`).then(res => res.json()),
+    queryKey: getContentCacheKey(postId),
+    queryFn: async () => {
+      // Önce yerel önbellekten kontrol et
+      const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(postId));
+      if (cachedContent) {
+        // Arka planda yine de fetch yap ama önbelleği hemen döndür
+        fetch(`/api/content/${postId}`)
+          .then(res => res.json())
+          .then(freshContent => {
+            // Eğer içerik değiştiyse güncelle
+            saveToLocalCache(getLocalStorageKey(postId), freshContent);
+            // Queryİstemci önbelleğini güncelle
+            queryClient.setQueryData(getContentCacheKey(postId), freshContent);
+          })
+          .catch(err => console.error('Arka plan yenileme hatası:', err));
+        
+        return cachedContent;
+      }
+      
+      // Önbellekte yoksa sunucudan al
+      const response = await fetch(`/api/content/${postId}`);
+      const data = await response.json();
+      
+      // Yerel önbelleğe kaydet
+      saveToLocalCache(getLocalStorageKey(postId), data);
+      
+      return data;
+    },
     enabled: postId > 0,
+    initialData: localCachedContent, // Eğer yerel önbellekten içerik yüklendiyse, ilk veri olarak kullan
+    // HARD CACHE AYARLARI
+    staleTime: 1000 * 60 * 60 * 24, // 24 saat (1 gün) süreyle önbelleğe alınan veri "taze" olarak kabul edilir
+    cacheTime: 1000 * 60 * 60 * 24 * 7, // 7 gün süreyle önbellekte tutulur
+    retry: 1, // Başarısız istekleri sadece 1 kez yeniden dene
+    refetchOnWindowFocus: false, // Pencere odağı değiştiğinde yeniden sorgu yapma
+    refetchOnMount: false, // Bileşen monte edildiğinde yeniden sorgu yapma
+    refetchOnReconnect: false, // Yeniden bağlandığında yeniden sorgu yapma
   });
+
+  // Diğer içerikler için ön yükleme (preloading)
+  useEffect(() => {
+    if (content && content.id) {
+      // Bir sonraki içeriği de ön yükle (varsa)
+      const nextPostId = content.id + 1;
+      queryClient.prefetchQuery({
+        queryKey: getContentCacheKey(nextPostId),
+        queryFn: () => {
+          // Önce yerel önbellekten kontrol et
+          const cachedContent = getFromLocalCache<Content>(getLocalStorageKey(nextPostId));
+          if (cachedContent) {
+            return Promise.resolve(cachedContent);
+          }
+          
+          // Önbellekte yoksa sunucudan al
+          return fetch(`/api/content/${nextPostId}`)
+            .then(res => res.json())
+            .then(data => {
+              // Yerel önbelleğe kaydet
+              saveToLocalCache(getLocalStorageKey(nextPostId), data);
+              return data;
+            });
+        },
+        staleTime: 1000 * 60 * 60 * 24, // 24 saat
+      });
+    }
+  }, [content, queryClient]);
 
   // CLS (Cumulative Layout Shift) izleme
   useEffect(() => {
@@ -168,6 +249,13 @@ export default function Post() {
       </div>
     );
   }
+
+  // İçeriği lokal storage'a da kaydet
+  useEffect(() => {
+    if (content) {
+      saveToLocalCache(getLocalStorageKey(content.id), content);
+    }
+  }, [content]);
 
   const truncatedContent = content.content.substring(0, 160);
   const currentSlug = content.slug || `icerik-${content.id}`;
