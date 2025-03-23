@@ -6,18 +6,18 @@ interface FooterProps {
 
 export function Footer({ settings }: FooterProps) {
   return (
-    <footer className="bg-background border-t">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="bg-background border-t w-full mt-auto">
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <h3 className="font-semibold mb-4">Hakkımızda</h3>
+            <h3 className="font-semibold mb-3">Hakkımızda</h3>
             <p className="text-muted-foreground">
               {settings?.aboutText || 'Modern ve SEO uyumlu blog platformu'}
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">Hızlı Linkler</h3>
-            <ul className="space-y-2">
+            <h3 className="font-semibold mb-3">Hızlı Linkler</h3>
+            <ul className="space-y-1">
               <li>
                 <a href="/" className="text-muted-foreground hover:text-foreground">
                   Ana Sayfa
@@ -36,15 +36,15 @@ export function Footer({ settings }: FooterProps) {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">İletişim</h3>
+            <h3 className="font-semibold mb-3">İletişim</h3>
             <p className="text-muted-foreground">
               Email: {settings?.email || 'info@example.com'}<br />
               Tel: {settings?.phone || '+90 212 123 45 67'}
             </p>
           </div>
         </div>
-        <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Blog. Tüm hakları saklıdır.</p>
+        <div className="border-t mt-6 pt-6 text-center text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} {settings?.copyright || 'Manisa Haber Gazetesi. Tüm hakları saklıdır.'}</p>
         </div>
       </div>
     </footer>

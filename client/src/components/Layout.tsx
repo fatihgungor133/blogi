@@ -82,7 +82,7 @@ export function Layout({ children, title, description }: LayoutProps) {
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-hidden">
       {siteSettings && (
         <Seo 
           title={pageTitle}
@@ -91,7 +91,7 @@ export function Layout({ children, title, description }: LayoutProps) {
         />
       )}
       <Header siteName={siteName} />
-      <main className="flex-grow">
+      <main className="flex-grow w-full">
         {children}
       </main>
       <Footer settings={footerSettings || defaultFooterSettings} />

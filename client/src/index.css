@@ -7,8 +7,16 @@
     @apply border-border;
   }
 
+  html, body {
+    @apply h-full m-0 p-0 overflow-x-hidden;
+  }
+
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground min-h-screen;
+  }
+  
+  #root {
+    @apply min-h-screen flex flex-col;
   }
 }
 
@@ -42,4 +50,11 @@ h1, h2, h3 {
 /* Sayfa numaralandırma alanı için sabit yükseklik */
 .pagination-container {
   min-height: 40px;
+}
+
+/* Footer boşluğunu önleme */
+footer {
+  margin-top: auto;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
