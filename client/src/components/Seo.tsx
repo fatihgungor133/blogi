@@ -17,7 +17,7 @@ interface SeoProps {
 
 export function Seo({
   title,
-  description = "Blog içeriklerini keşfedin",
+  description = "Manisa'dan güncel haberler ve içerikler",
   canonicalUrl,
   type = "website",
   imageUrl,

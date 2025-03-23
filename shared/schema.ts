@@ -58,6 +58,11 @@ export interface SiteSettings {
   siteName: string;
   metaDescription: string | null;
   updatedAt: Date;
+  logoUrl?: string;
+  faviconUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  fontFamily?: string;
 }
 
 export interface FooterSettings {
@@ -66,6 +71,14 @@ export interface FooterSettings {
   email: string | null;
   phone: string | null;
   updatedAt: Date;
+  copyright?: string;
+  showSocialLinks?: boolean;
+  facebookUrl?: string;
+  twitterUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  showContactInfo?: boolean;
+  address?: string;
 }
 
 // Zod schemas for validation

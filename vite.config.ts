@@ -16,7 +16,7 @@ Disallow: /api/admin/
 Disallow: /admin/
 
 # Sitemap
-Sitemap: https://www.localhost.tr/sitemap.xml
+Sitemap: https://www.manisahabergazetesi.com.tr/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 10`;

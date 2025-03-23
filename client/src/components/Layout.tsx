@@ -13,8 +13,8 @@ interface LayoutProps {
 
 // Varsayılan ayarlar
 const defaultSiteSettings: SiteSettings = {
-  siteName: 'Blog İçerik Tarayıcısı',
-  metaDescription: 'Tüm blog içerikleriniz için tek adres',
+  siteName: 'Manisa Haber Gazetesi',
+  metaDescription: 'Manisa\'dan güncel haberler ve içerikler',
   logoUrl: '/logo.png',
   faviconUrl: '/favicon.ico',
   primaryColor: '#3490dc',
@@ -23,16 +23,16 @@ const defaultSiteSettings: SiteSettings = {
 };
 
 const defaultFooterSettings: FooterSettings = {
-  copyright: '© 2023 Blog İçerik Tarayıcısı. Tüm hakları saklıdır.',
+  copyright: '© 2023 Manisa Haber Gazetesi. Tüm hakları saklıdır.',
   showSocialLinks: true,
-  facebookUrl: 'https://facebook.com',
-  twitterUrl: 'https://twitter.com',
-  instagramUrl: 'https://instagram.com',
-  linkedinUrl: 'https://linkedin.com',
+  facebookUrl: 'https://facebook.com/manisahabergazetesi',
+  twitterUrl: 'https://twitter.com/manisahaber',
+  instagramUrl: 'https://instagram.com/manisahabergazetesi',
+  linkedinUrl: 'https://linkedin.com/company/manisahabergazetesi',
   showContactInfo: true,
-  email: 'info@example.com',
+  email: 'info@manisahabergazetesi.com.tr',
   phone: '+90 555 123 4567',
-  address: 'İstanbul, Türkiye'
+  address: 'Manisa, Türkiye'
 };
 
 export function Layout({ children, title, description }: LayoutProps) {
@@ -78,7 +78,7 @@ export function Layout({ children, title, description }: LayoutProps) {
   }
 
   // Varsayılan değeri doğrudan belirtin
-  const siteName = siteSettings?.siteName || 'Blog İçerik Tarayıcısı';
+  const siteName = siteSettings?.siteName || 'Manisa Haber Gazetesi';
   const pageTitle = title ? `${title} | ${siteName}` : siteName;
 
   return (
