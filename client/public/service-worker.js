@@ -47,14 +47,21 @@ self.addEventListener('activate', event => {
 
 // Fetch - API isteklerini önbelleğe alma
 self.addEventListener('fetch', event => {
-  // API istekleri için özel cache stratejisi
+  // Sadece GET isteklerini önbelleğe al
+  if (event.request.method !== 'GET') {
+    // GET olmayan istekleri doğrudan ağ üzerinden yap
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // API istekleri için özel cache stratejisi (sadece GET istekleri)
   if (event.request.url.includes('/api/content/')) {
     // Stale-while-revalidate stratejisi
     event.respondWith(staleWhileRevalidate(event.request));
     return;
   }
 
-  // Diğer istekler için network-first stratejisi
+  // Diğer GET istekleri için network-first stratejisi
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -66,7 +73,11 @@ self.addEventListener('fetch', event => {
         // Yanıtın bir kopyasını önbelleğe al
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseClone);
+          try {
+            cache.put(event.request, responseClone);
+          } catch (error) {
+            console.error('Önbelleğe alma hatası:', error);
+          }
         });
 
         return response;
@@ -80,6 +91,11 @@ self.addEventListener('fetch', event => {
 
 // İçerik API'si için stale-while-revalidate stratejisi
 async function staleWhileRevalidate(request) {
+  // Sadece GET isteklerini işle
+  if (request.method !== 'GET') {
+    return fetch(request);
+  }
+
   const cache = await caches.open(CONTENT_CACHE_NAME);
   
   // Önce önbellekten kontrol et
@@ -89,7 +105,11 @@ async function staleWhileRevalidate(request) {
   const networkResponsePromise = fetch(request).then(networkResponse => {
     // Sadece başarılı yanıtları önbelleğe al
     if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+      try {
+        cache.put(request, networkResponse.clone());
+      } catch (error) {
+        console.error('İçerik önbelleğe alma hatası:', error);
+      }
     }
     return networkResponse;
   }).catch(error => {
